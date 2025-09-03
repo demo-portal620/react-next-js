@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, User, Lock, AlertCircle } from "lucide-react";
+import { loginUser } from "@/services/authApi";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,20 +29,43 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
+    // Client-side validation
     if (!username || !password) {
       setError("Please enter both username and password.");
       setIsLoading(false);
       return;
     }
 
-    if (username === "admin" && password === "password") {
+    try {
+      // Make actual API call
+      const result = await loginUser(username, password);
+
+      // Handle successful login
+      console.log("Login successful:", result);
+
+      // Store token if provided
+      if (result.token) {
+        localStorage.setItem("authToken", result.token);
+      }
+
+      // Store user data if provided
+      if (result.user) {
+        localStorage.setItem("user", JSON.stringify(result.user));
+      }
+
+      // Clear any previous errors and redirect
       setError("");
       router.push("/");
-    } else {
-      setError("Invalid username or password.");
+    } catch (error) {
+      // Handle API errors
+      console.error("Login error:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Login failed. Please try again."
+      );
+    } finally {
+      // Always stop loading state
       setIsLoading(false);
     }
   };
@@ -182,25 +206,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
-            <p className="text-xs text-gray-600 text-center mb-2 font-medium">
-              Demo Credentials:
-            </p>
-            <div className="text-xs text-gray-500 text-center space-y-1">
-              <p>
-                Username:{" "}
-                <span className="font-mono bg-white px-1 rounded">admin</span>
-              </p>
-              <p>
-                Password:{" "}
-                <span className="font-mono bg-white px-1 rounded">
-                  password
-                </span>
-              </p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
