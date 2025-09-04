@@ -1,4 +1,4 @@
-export interface CategoryBeanList {
-  label: string;
-  value: number;
-}
+// export interface CategoryBeanList {
+//   label: string;
+//   value: number;
+// }

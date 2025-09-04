@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
-  ChevronLeft,
   ChevronDown,
   BarChart3,
   Users,
@@ -14,8 +13,6 @@ import {
   Coins,
   DollarSign,
   FileText,
-  Settings,
-  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

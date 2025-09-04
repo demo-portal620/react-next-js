@@ -1,4 +1,4 @@
-export interface OptionBeanList {
-  label: string;
-  value: string;
-}
+// export interface OptionBeanList {
+//   label: string;
+//   value: string;
+// }

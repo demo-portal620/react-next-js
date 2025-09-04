@@ -30,30 +30,30 @@ export default function UserFormPage() {
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const options = await fetchSelectOptions();
-        setSelectOptions(options);
+  // useEffect(() => {
+  //   async function loadData() {
+  //     try {
+  //       const options = await fetchSelectOptions();
+  //       setSelectOptions(options);
 
-        if (isEditMode) {
-          const userData = await fetchUserById(Number(idParam));
-          setUser({
-            name: userData.name,
-            email: userData.email,
-            skillsetIds: userData.skillsetIds,
-            hobbyIds: userData.hobbyIds,
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
+  //       if (isEditMode) {
+  //         const userData = await fetchUserById(Number(idParam));
+  //         setUser({
+  //           name: userData.name,
+  //           email: userData.email,
+  //           skillsetIds: userData.skillsetIds,
+  //           hobbyIds: userData.hobbyIds,
+  //         });
+  //       }
+  //     } catch (err) {
+  //       console.error(err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
 
-    loadData();
-  }, [idParam]);
+  //   loadData();
+  // }, [idParam, isEditMode]);
 
   function handleInputChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>

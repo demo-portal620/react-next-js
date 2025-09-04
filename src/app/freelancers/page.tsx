@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchUsers } from "@/services/userApi";
+// import { fetchUsers } from "@/services/userApi";
 import { useRouter } from "next/navigation";
 
 type User = {
@@ -20,16 +20,16 @@ export default function UserListPage() {
   const [pageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchUsers(page, pageSize, "")
-      .then((data) => {
-        setUsers(data.users);
-        setTotalCount(data.totalCount);
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  }, [page]);
+  // useEffect(() => {
+  //   setLoading(true);
+  //   fetchUsers(page, pageSize, "")
+  //     .then((data) => {
+  //       setUsers(data.users);
+  //       setTotalCount(data.totalCount);
+  //     })
+  //     .catch((err) => console.error(err))
+  //     .finally(() => setLoading(false));
+  // }, [page, pageSize]);
 
   const toggleArchive = (id: number) => {
     setUsers((prev) =>
