@@ -13,12 +13,12 @@ import {
   SESSIONSTORAGE_KEY_CODECATEGORYS,
   SESSIONSTORAGE_KEY_COLUMN,
   SESSIONSTORAGE_KEY_LANGUAGE_CODE,
-} from "@/utils/constants";
-import { CategoryBeanList } from "@/types/CategoryBeanList";
-import { OptionBeanList } from "@/types/OptionBeanList";
-import { PrimitiveType } from "@/types/PrimitiveType";
+} from "./constants";
+import { CategoryBeanList } from "./CategoryBeanList";
+import { OptionBeanList } from "./OptionBeanList";
+import { PrimitiveType } from "./PrimitiveType";
 import { enUS } from "date-fns/locale";
-import { PageInfo, RowDefine } from "@/types/PageInfo";
+import { PageInfo, RowDefine } from "./PageInfo";
 import { UseFormSetValue } from "react-hook-form";
 
 // // Add this type definition at the top with other imports

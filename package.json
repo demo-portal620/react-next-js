@@ -18,11 +18,14 @@
     "bootstrap": "^5.3.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "i18next": "^25.4.2",
     "lucide-react": "^0.540.0",
     "next": "15.4.5",
     "notistack": "^3.0.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hook-form": "^7.62.0",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
