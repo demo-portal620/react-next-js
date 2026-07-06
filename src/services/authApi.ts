@@ -1,5 +1,5 @@
-//const AUTH_BASE = "http://ap-demo.ap-southeast-1.elasticbeanstalk.com/auth";
-const AUTH_BASE = "https://spring-boot-mybatis.onrender.com/auth";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+const AUTH_BASE = `${API_BASE}/auth`;
 
 // Login function
 export async function loginUser(username: string, password: string) {

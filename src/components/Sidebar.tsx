@@ -41,6 +41,11 @@ const menuItems: MenuItem[] = [
     href: "/",
   },
   {
+    title: "Freelancers",
+    icon: <Users className="h-4 w-4" />,
+    href: "/freelancers",
+  },
+  {
     title: "User Management",
     icon: <Users className="h-4 w-4" />,
     children: [
