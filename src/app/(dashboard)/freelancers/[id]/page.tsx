@@ -9,6 +9,44 @@ import {
   updateFreelancer,
   Option,
 } from "@/services/freelancerApi";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function TogglePill({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+        selected
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
 
 export default function FreelancerFormPage() {
   const router = useRouter();
@@ -63,9 +101,22 @@ export default function FreelancerFormPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handleMultiSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const selectedValues = Array.from(e.target.selectedOptions, (o) => o.value);
-    setForm((prev) => ({ ...prev, [e.target.name]: selectedValues }));
+  function toggleSkillset(id: string) {
+    setForm((prev) => ({
+      ...prev,
+      skillsetIds: prev.skillsetIds.includes(id)
+        ? prev.skillsetIds.filter((s) => s !== id)
+        : [...prev.skillsetIds, id],
+    }));
+  }
+
+  function toggleHobby(id: string) {
+    setForm((prev) => ({
+      ...prev,
+      hobbyIds: prev.hobbyIds.includes(id)
+        ? prev.hobbyIds.filter((h) => h !== id)
+        : [...prev.hobbyIds, id],
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -86,101 +137,122 @@ export default function FreelancerFormPage() {
     }
   }
 
-  if (loading) return <div className="p-4">Loading...</div>;
-
   return (
-    <div className="p-4 max-w-lg">
-      <h1 className="text-xl font-bold mb-4">
-        {isEditMode ? "Edit Freelancer" : "Register Freelancer"}
-      </h1>
+    <div className="p-6 max-w-2xl mx-auto space-y-4">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push("/freelancers")}
+        className="-ml-2"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to list
+      </Button>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      <Card>
+        <CardHeader>
+          <CardTitle>{isEditMode ? "Edit Freelancer" : "Register Freelancer"}</CardTitle>
+          <CardDescription>
+            {isEditMode
+              ? "Update this freelancer's details, skillsets and hobbies."
+              : "Add a new freelancer to the directory."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Username</label>
-          <input
-            name="username"
-            value={form.username}
-            onChange={handleInputChange}
-            required
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  name="username"
+                  value={form.username}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
-          <input
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleInputChange}
-            required
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Phone Number</label>
-          <input
-            name="phoneNumber"
-            value={form.phoneNumber}
-            onChange={handleInputChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={form.phoneNumber}
+                  onChange={handleInputChange}
+                />
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Skillsets</label>
-          <select
-            multiple
-            name="skillsetIds"
-            value={form.skillsetIds}
-            onChange={handleMultiSelectChange}
-            className="w-full border rounded px-3 py-2"
-          >
-            {availableSkillsets.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.name}
-              </option>
-            ))}
-          </select>
-        </div>
+              <div className="space-y-2">
+                <Label>Skillsets</Label>
+                <div className="flex flex-wrap gap-2">
+                  {availableSkillsets.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No skillsets available.</p>
+                  )}
+                  {availableSkillsets.map((opt) => (
+                    <TogglePill
+                      key={opt.id}
+                      label={opt.name}
+                      selected={form.skillsetIds.includes(opt.id)}
+                      onClick={() => toggleSkillset(opt.id)}
+                    />
+                  ))}
+                </div>
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Hobbies</label>
-          <select
-            multiple
-            name="hobbyIds"
-            value={form.hobbyIds}
-            onChange={handleMultiSelectChange}
-            className="w-full border rounded px-3 py-2"
-          >
-            {availableHobbies.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.name}
-              </option>
-            ))}
-          </select>
-        </div>
+              <div className="space-y-2">
+                <Label>Hobbies</Label>
+                <div className="flex flex-wrap gap-2">
+                  {availableHobbies.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No hobbies available.</p>
+                  )}
+                  {availableHobbies.map((opt) => (
+                    <TogglePill
+                      key={opt.id}
+                      label={opt.name}
+                      selected={form.hobbyIds.includes(opt.id)}
+                      onClick={() => toggleHobby(opt.id)}
+                    />
+                  ))}
+                </div>
+              </div>
 
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            {saving ? "Saving..." : isEditMode ? "Update" : "Create"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/freelancers")}
-            className="bg-gray-500 text-white px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : isEditMode ? "Update" : "Create"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/freelancers")}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

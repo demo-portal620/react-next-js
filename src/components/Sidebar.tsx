@@ -2,18 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import {
-  ChevronDown,
-  BarChart3,
-  Users,
-  Building,
-  CheckSquare,
-  CreditCard,
-  University,
-  Coins,
-  DollarSign,
-  FileText,
-} from "lucide-react";
+import { ChevronDown, BarChart3, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -34,6 +23,10 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
+// Trimmed down to what's actually built for now. The rest of the modules
+// below (User Management, Sub Accounts, Bank/Credit/Order Management) are
+// unused placeholders with no real pages behind them yet - kept commented
+// out so they're easy to bring back once they're implemented.
 const menuItems: MenuItem[] = [
   {
     title: "Dashboard",
@@ -45,6 +38,7 @@ const menuItems: MenuItem[] = [
     icon: <Users className="h-4 w-4" />,
     href: "/freelancers",
   },
+  /*
   {
     title: "User Management",
     icon: <Users className="h-4 w-4" />,
@@ -119,11 +113,12 @@ const menuItems: MenuItem[] = [
       },
     ],
   },
+  */
 ];
 
 export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();
-  const [openItems, setOpenItems] = useState<string[]>(["User Management"]);
+  const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleItem = (title: string) => {
     setOpenItems((prev) =>
@@ -156,47 +151,8 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
       {/* Sidebar */}
       <div className="sidebar">
-        {/* User Panel */}
-        {!collapsed && (
-          <div className="user-panel mt-3 pb-3 mb-3 px-4 border-b border-gray-700">
-            <div className="info">
-              <div className="text-gray-300 mb-4">
-                <div className="mb-2">Credit Balance:</div>
-                <div className="text-right">
-                  <strong className="text-lg">$1,250.00</strong>
-                </div>
-              </div>
-              <div className="text-gray-300 mb-4">
-                <div className="mb-2">Available Balance:</div>
-                <div className="text-right">
-                  <strong className="text-lg">$850.00</strong>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="flex-1 bg-white text-black hover:bg-gray-100"
-                >
-                  Top Up
-                </Button>
-                <Button
-                  size="sm"
-                  className="flex-1 bg-white text-black hover:bg-gray-100"
-                >
-                  Pay Out
-                </Button>
-              </div>
-              <div className="text-gray-400 text-sm mt-4">
-                Last login at:
-                <br />
-                <strong>Mon Jan 15 2024 10:30:45</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Sidebar Menu */}
-        <nav className="mt-2 px-2">
+        <nav className="mt-4 px-2">
           <ul className="nav nav-pills nav-sidebar flex-column space-y-1">
             {menuItems.map((item) => (
               <li key={item.title} className="nav-item">

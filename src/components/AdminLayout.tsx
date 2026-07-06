@@ -22,7 +22,7 @@ export default function AdminLayout({
 
         <div
           className={cn(
-            "content-wrapper transition-all duration-300",
+            "content-wrapper pt-14 transition-all duration-300",
             sidebarCollapsed ? "ml-16" : "ml-64"
           )}
         >

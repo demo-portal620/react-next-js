@@ -51,3 +51,12 @@ export async function fetchUserById(id: string): Promise<User> {
   const body: BaseResponse<User> = await res.json();
   return body.data;
 }
+
+// The currently logged-in user's own profile, resolved from the JWT.
+export async function fetchCurrentUser(): Promise<User> {
+  const res = await fetch(`${USERS_BASE}/me`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error("Failed to fetch current user");
+  const body: BaseResponse<User> = await res.json();
+  if (!body.success) throw new Error("Not authenticated");
+  return body.data;
+}
