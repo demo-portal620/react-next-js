@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BarChart3, Users } from "lucide-react";
+import { ChevronDown, BarChart3, Users, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -37,6 +37,11 @@ const menuItems: MenuItem[] = [
     title: "Freelancers",
     icon: <Users className="h-4 w-4" />,
     href: "/freelancers",
+  },
+  {
+    title: "APK Versions",
+    icon: <Smartphone className="h-4 w-4" />,
+    href: "/apk-versions",
   },
   /*
   {

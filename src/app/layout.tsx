@@ -1,4 +1,5 @@
 import "./globals.css";
+import PageViewTracker from "@/components/PageViewTracker";
 
 export const metadata = {
   title: "My Admin Portal",
@@ -12,7 +13,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PageViewTracker />
+        {children}
+      </body>
     </html>
   );
 }
