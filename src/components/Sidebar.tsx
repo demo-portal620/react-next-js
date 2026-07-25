@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -21,6 +22,11 @@ interface MenuItem {
   icon: React.ReactNode;
   href?: string;
   children?: MenuItem[];
+  // Mirrors th-pgs's Thymeleaf sec:authorize="hasAuthority('X')" on a nav
+  // item - omit for "visible to anyone logged in" (e.g. Dashboard,
+  // Freelancers - the latter's backend endpoint is public too, so gating
+  // just the nav link would be inconsistent with what's actually callable).
+  requiredPermission?: string;
 }
 
 // Trimmed down to what's actually built for now. The rest of the modules
@@ -47,6 +53,7 @@ const menuItems: MenuItem[] = [
     title: "Who's Online",
     icon: <Radio className="h-4 w-4" />,
     href: "/presence",
+    requiredPermission: "VIEW_PRESENCE",
   },
   {
     title: "User Management",
@@ -56,11 +63,13 @@ const menuItems: MenuItem[] = [
         title: "User List",
         icon: <Users className="h-4 w-4" />,
         href: "/users",
+        requiredPermission: "VIEW_USER",
       },
       {
         title: "Roles",
         icon: <Shield className="h-4 w-4" />,
         href: "/roles",
+        requiredPermission: "MANAGE_ROLE",
       },
     ],
   },
@@ -123,6 +132,7 @@ const menuItems: MenuItem[] = [
 
 export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();
+  const { hasPermission } = useAuth();
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleItem = (title: string) => {
@@ -136,6 +146,24 @@ export default function Sidebar({ collapsed }: SidebarProps) {
   const isActive = (href?: string) => {
     return href === pathname;
   };
+
+  // Same idea as th-pgs's sec:authorize on a nav <li> - a plain item needs
+  // its own permission (if any); a group with children is shown only if at
+  // least one child survives filtering (no point showing an empty "User
+  // Management" dropdown to someone with neither VIEW_USER nor MANAGE_ROLE).
+  const visibleMenuItems = menuItems.reduce<MenuItem[]>((acc, item) => {
+    if (item.children) {
+      const visibleChildren = item.children.filter(
+        (child) => !child.requiredPermission || hasPermission(child.requiredPermission)
+      );
+      if (visibleChildren.length > 0) {
+        acc.push({ ...item, children: visibleChildren });
+      }
+    } else if (!item.requiredPermission || hasPermission(item.requiredPermission)) {
+      acc.push(item);
+    }
+    return acc;
+  }, []);
 
   return (
     <aside
@@ -159,7 +187,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         {/* Sidebar Menu */}
         <nav className="mt-4 px-2">
           <ul className="nav nav-pills nav-sidebar flex-column space-y-1">
-            {menuItems.map((item) => (
+            {visibleMenuItems.map((item) => (
               <li key={item.title} className="nav-item">
                 {item.children ? (
                   <Collapsible
