@@ -21,8 +21,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Download, Trash2, UploadCloud } from "lucide-react";
+import { AlertCircle, Download, QrCode, Trash2, UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AppDialog from "@/components/custom-ui/app-dialog";
+import { QRCodeSVG } from "qrcode.react";
 
 const DEFAULT_APP_CODE = "AP_ANDROID";
 
@@ -31,6 +33,10 @@ export default function ApkVersionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [totalCount, setTotalCount] = useState(0);
+  // Which row's QR modal is open, if any - the download endpoint is public
+  // (see SecurityConfig), so the QR just needs to encode its absolute URL,
+  // no token/session to carry across from PC to phone.
+  const [qrVersion, setQrVersion] = useState<ApkVersion | null>(null);
 
   // Upload form state
   const [file, setFile] = useState<File | null>(null);
@@ -266,6 +272,15 @@ export default function ApkVersionsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Show QR code to download on a phone"
+                          onClick={() => setQrVersion(v)}
+                        >
+                          <QrCode className="h-4 w-4" />
+                        </Button>
                         <a href={apkDownloadUrl(v.id)}>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Download className="h-4 w-4" />
@@ -290,6 +305,29 @@ export default function ApkVersionsPage() {
       </Card>
 
       <p className="text-sm text-muted-foreground">{totalCount} build(s) total</p>
+
+      <AppDialog
+        title={qrVersion ? `Download ${qrVersion.appCode} ${qrVersion.versionName}` : ""}
+        show={qrVersion !== null}
+        onClose={() => setQrVersion(null)}
+        showFooter={false}
+        width="360px"
+      >
+        {qrVersion && (
+          <div className="flex flex-col items-center gap-3 py-2">
+            <p className="text-sm text-muted-foreground text-center">
+              Scan with your phone&apos;s camera to open the download link directly -
+              a fallback for when the app&apos;s own auto-update can&apos;t reach it.
+            </p>
+            <div className="rounded-lg border bg-white p-4">
+              <QRCodeSVG value={apkDownloadUrl(qrVersion.id)} size={220} />
+            </div>
+            <p className="break-all text-xs text-muted-foreground text-center">
+              {apkDownloadUrl(qrVersion.id)}
+            </p>
+          </div>
+        )}
+      </AppDialog>
     </div>
   );
 }
