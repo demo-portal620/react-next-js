@@ -9,6 +9,19 @@ interface BaseResponse<T> {
   statusCode: number;
 }
 
+export interface Permission {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  permissions: Permission[];
+}
+
 export interface User {
   id: string;
   username: string;
@@ -16,6 +29,7 @@ export interface User {
   lastname?: string;
   email: string;
   phoneNumber?: string;
+  roles?: Role[];
 }
 
 export interface UsersResponse {
@@ -58,5 +72,18 @@ export async function fetchCurrentUser(): Promise<User> {
   if (!res.ok) throw new Error("Failed to fetch current user");
   const body: BaseResponse<User> = await res.json();
   if (!body.success) throw new Error("Not authenticated");
+  return body.data;
+}
+
+// Replaces this user's entire role assignment with the given role ids.
+export async function setUserRoles(id: string, roleIds: string[]): Promise<User> {
+  const res = await fetch(`${USERS_BASE}/${id}/roles`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ roleIds }),
+  });
+  if (!res.ok) throw new Error("Failed to update roles");
+  const body: BaseResponse<User> = await res.json();
+  if (!body.success) throw new Error("Failed to update roles");
   return body.data;
 }

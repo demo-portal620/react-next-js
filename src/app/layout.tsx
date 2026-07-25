@@ -1,5 +1,8 @@
 import "./globals.css";
 import PageViewTracker from "@/components/PageViewTracker";
+import { Toaster } from "@/components/ui/toaster";
+import I18nProvider from "@/components/I18nProvider";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata = {
   title: "My Admin Portal",
@@ -14,8 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <PageViewTracker />
-        {children}
+        <I18nProvider>
+          <AuthProvider>
+            <PageViewTracker />
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );

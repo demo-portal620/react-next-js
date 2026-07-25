@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { fetchCurrentUser } from "@/services/userApi";
+import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -27,9 +27,9 @@ interface HeaderProps {
 
 export default function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
+  const { currentUser, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState("");
   const [language, setLanguage] = useState("en");
-  const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
     const updateTime = () => {
@@ -51,20 +51,10 @@ export default function Header({ onMenuToggle }: HeaderProps) {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    fetchCurrentUser()
-      .then((user) => {
-        const name = [user.firstname, user.lastname].filter(Boolean).join(" ");
-        setDisplayName(name || user.username);
-      })
-      .catch(() => setDisplayName(""));
-  }, []);
-
-  function handleLogout() {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    router.push("/login");
-  }
+  const displayName = currentUser
+    ? [currentUser.firstname, currentUser.lastname].filter(Boolean).join(" ") ||
+      currentUser.username
+    : "";
 
   return (
     <header className="main-header fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -119,7 +109,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                 <span>My Profile</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+              <DropdownMenuItem className="text-red-600" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Logout</span>
               </DropdownMenuItem>

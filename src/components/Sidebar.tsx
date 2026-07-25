@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BarChart3, Users, Smartphone } from "lucide-react";
+import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -24,9 +24,9 @@ interface MenuItem {
 }
 
 // Trimmed down to what's actually built for now. The rest of the modules
-// below (User Management, Sub Accounts, Bank/Credit/Order Management) are
-// unused placeholders with no real pages behind them yet - kept commented
-// out so they're easy to bring back once they're implemented.
+// below (Sub Accounts, Bank/Credit/Order Management) are unused placeholders
+// with no real pages behind them yet - kept commented out so they're easy to
+// bring back once they're implemented.
 const menuItems: MenuItem[] = [
   {
     title: "Dashboard",
@@ -43,28 +43,28 @@ const menuItems: MenuItem[] = [
     icon: <Smartphone className="h-4 w-4" />,
     href: "/apk-versions",
   },
-  /*
+  {
+    title: "Who's Online",
+    icon: <Radio className="h-4 w-4" />,
+    href: "/presence",
+  },
   {
     title: "User Management",
     icon: <Users className="h-4 w-4" />,
     children: [
       {
         title: "User List",
-        icon: <Building className="h-4 w-4" />,
+        icon: <Users className="h-4 w-4" />,
         href: "/users",
       },
       {
-        title: "Companies",
-        icon: <Building className="h-4 w-4" />,
-        href: "/companies",
-      },
-      {
-        title: "Permissions",
-        icon: <CheckSquare className="h-4 w-4" />,
-        href: "/permissions",
+        title: "Roles",
+        icon: <Shield className="h-4 w-4" />,
+        href: "/roles",
       },
     ],
   },
+  /*
   {
     title: "Sub Account Listing",
     icon: <CreditCard className="h-4 w-4" />,

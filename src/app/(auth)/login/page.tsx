@@ -15,9 +15,11 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, User, Lock, AlertCircle } from "lucide-react";
 import { loginUser } from "@/services/authApi";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -43,14 +45,9 @@ export default function LoginPage() {
       // Handle successful login
       console.log("Login successful:", result);
 
-      // Store token if provided
+      // Store the token and load the current user into AuthContext
       if (result.token) {
-        localStorage.setItem("authToken", result.token);
-      }
-
-      // Store user data if provided
-      if (result.user) {
-        localStorage.setItem("user", JSON.stringify(result.user));
+        await login(result.token);
       }
 
       // Clear any previous errors and redirect
