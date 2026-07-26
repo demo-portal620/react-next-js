@@ -5,7 +5,8 @@ import {
   Card,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { downloadCsv, CsvCell } from "@/lib/csv";
 
 // Generic paginated table - replaces the ~150 lines of table/pagination
 // markup that was copy-pasted per feature page (roles, freelancers, users,
@@ -21,6 +22,13 @@ export interface DataTableColumn<T> {
   render?: (row: T) => ReactNode;
   className?: string;
   headerClassName?: string;
+  /**
+   * Value used for this column in CSV export - needed whenever render()
+   * produces JSX (badges, buttons, a joined list) rather than a plain
+   * string, since that JSX has no sensible CSV representation. Defaults to
+   * the raw row[key] if omitted.
+   */
+  csvValue?: (row: T) => CsvCell;
 }
 
 export interface DataTableProps<T> {
@@ -37,6 +45,8 @@ export interface DataTableProps<T> {
   onPageChange: (page: number) => void;
   /** Singular label used in the "N role(s) total" footer line, e.g. "role". Defaults to "item". */
   itemLabel?: string;
+  /** Shows an "Export CSV" button (downloaded as this filename) when provided. */
+  exportFileName?: string;
 }
 
 export default function DataTable<T>({
@@ -51,12 +61,45 @@ export default function DataTable<T>({
   total,
   onPageChange,
   itemLabel = "item",
+  exportFileName,
 }: DataTableProps<T>) {
   const totalPages = Math.max(Math.ceil(total / pageSize), 1);
   const colSpan = columns.length + (actions ? 1 : 0);
 
+  // Exports exactly the rows currently loaded into this table, not every
+  // page - a real "export everything matching the filter" would need
+  // either a dedicated backend endpoint or fetching every page client-side,
+  // which is a bigger feature than this basic pass. When pageSize already
+  // covers the full result set (e.g. presence's page), that distinction is
+  // moot; when it doesn't (e.g. roles' page of 10), the button label below
+  // is explicit about the scope so it isn't mistaken for a full export.
+  function handleExport() {
+    if (!exportFileName) return;
+    const headers = columns.map((col) => col.header);
+    const csvRows = rows.map((row) =>
+      columns.map((col) =>
+        col.csvValue ? col.csvValue(row) : ((row as Record<string, unknown>)[col.key] as CsvCell)
+      )
+    );
+    downloadCsv(exportFileName, headers, csvRows);
+  }
+
   return (
     <div className="space-y-4">
+      {exportFileName && (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={rows.length === 0}
+            title="Exports the rows currently shown on this page, not every page"
+          >
+            <Download className="h-4 w-4" />
+            Export this page (CSV)
+          </Button>
+        </div>
+      )}
       <Card className="py-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

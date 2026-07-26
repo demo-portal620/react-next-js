@@ -28,6 +28,7 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Download,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -37,6 +38,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { downloadCsv } from "@/lib/csv";
 
 export default function FreelancerListPage() {
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
@@ -92,6 +94,18 @@ export default function FreelancerListPage() {
 
   const totalPages = Math.max(Math.ceil(totalCount / pageSize), 1);
 
+  // Exports exactly this page's rows, not every freelancer matching the
+  // search - see DataTable's exportFileName for the same tradeoff (this
+  // page predates that shared component, so it calls the CSV utility
+  // directly instead).
+  function handleExport() {
+    downloadCsv(
+      "freelancers",
+      ["Username", "Email", "Phone", "Status"],
+      freelancers.map((f) => [f.username, f.email, f.phoneNumber ?? "", f.archived ? "Archived" : "Active"])
+    );
+  }
+
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
@@ -101,10 +115,21 @@ export default function FreelancerListPage() {
             Manage the CDN freelancer directory - search, register, edit, archive and remove entries.
           </p>
         </div>
-        <Button onClick={() => router.push("/freelancers/new")}>
-          <Plus className="h-4 w-4" />
-          Add Freelancer
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={freelancers.length === 0}
+            title="Exports the rows currently shown on this page, not every page"
+          >
+            <Download className="h-4 w-4" />
+            Export this page (CSV)
+          </Button>
+          <Button onClick={() => router.push("/freelancers/new")}>
+            <Plus className="h-4 w-4" />
+            Add Freelancer
+          </Button>
+        </div>
       </div>
 
       <Card>

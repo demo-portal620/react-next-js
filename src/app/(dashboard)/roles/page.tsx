@@ -102,6 +102,7 @@ export default function RoleListPage() {
     {
       key: "permissions",
       header: "Permissions",
+      csvValue: (role) => role.permissions.map((p) => p.name).join("; "),
       render: (role) => (
         <div className="flex flex-wrap gap-1">
           {role.permissions.length === 0 ? (
@@ -173,6 +174,7 @@ export default function RoleListPage() {
         loading={loading}
         emptyMessage="No roles found."
         itemLabel="role"
+        exportFileName="roles"
         page={page}
         pageSize={pageSize}
         total={totalCount}
