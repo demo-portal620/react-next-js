@@ -1,8 +1,31 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 const AUTH_BASE = `${API_BASE}/auth`;
 
-// Login function
-export async function loginUser(username: string, password: string) {
+// Mirrors ap-be's BaseResponse<T> JSON shape (com.admin.common.base.BaseResponse).
+// Message.text is the already-resolved human-readable string (see
+// com.admin.common.base.exception.Message#getText) - prefer it over the
+// bare code, same convention as apiClient.ts's extractMessage.
+interface BaseResponse<T> {
+  success: boolean;
+  data: T;
+  messages?: { code: string; text?: string; args?: unknown[] }[];
+  statusCode: number;
+}
+
+// Mirrors ap-be's com.admin.dto.auth.LoginResponseDto field-for-field.
+export interface LoginResponseDto {
+  token: string;
+}
+
+function firstMessage(body: BaseResponse<unknown> | null, fallback: string): string {
+  const first = body?.messages?.[0];
+  return first?.text || first?.code || fallback;
+}
+
+// Login function - ap-be's AuthController#login now returns
+// BaseResponse<LoginResponseDto> like every other endpoint (it used to
+// return a bare {"token": "..."} object).
+export async function loginUser(username: string, password: string): Promise<LoginResponseDto> {
   const url = `${AUTH_BASE}/login`;
 
   const res = await fetch(url, {
@@ -16,12 +39,13 @@ export async function loginUser(username: string, password: string) {
     }),
   });
 
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => null);
-    throw new Error(errorData?.message || `Login failed: ${res.status}`);
+  const body: BaseResponse<LoginResponseDto> | null = await res.json().catch(() => null);
+
+  if (!res.ok || !body?.success) {
+    throw new Error(firstMessage(body, `Login failed: ${res.status}`));
   }
 
-  return await res.json();
+  return body.data;
 }
 
 export interface RegisterPayload {
@@ -33,9 +57,11 @@ export interface RegisterPayload {
   phoneNumber?: string;
 }
 
-// Register function - backend returns a plain text body on success
-// (not JSON), so this reads text and only tries to parse JSON for errors.
-export async function registerUser(payload: RegisterPayload) {
+// Register function - ap-be's AuthController#register now returns
+// BaseResponse<Void> like every other endpoint (it used to return a bare
+// plain-text body, which is why this used to read res.text() instead of
+// res.json()).
+export async function registerUser(payload: RegisterPayload): Promise<void> {
   const url = `${AUTH_BASE}/register`;
 
   const res = await fetch(url, {
@@ -46,18 +72,9 @@ export async function registerUser(payload: RegisterPayload) {
     body: JSON.stringify(payload),
   });
 
-  const text = await res.text();
+  const body: BaseResponse<void> | null = await res.json().catch(() => null);
 
-  if (!res.ok) {
-    let message = text;
-    try {
-      const json = JSON.parse(text);
-      message = json.message || json.error || text;
-    } catch {
-      // not JSON, keep raw text
-    }
-    throw new Error(message || `Registration failed: ${res.status}`);
+  if (!res.ok || !body?.success) {
+    throw new Error(firstMessage(body, `Registration failed: ${res.status}`));
   }
-
-  return text;
 }
