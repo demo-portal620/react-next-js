@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
+import { LANGUAGE_STORAGE_KEY } from "@/config/i18n";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -28,8 +30,17 @@ interface HeaderProps {
 export default function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const { currentUser, logout } = useAuth();
+  const { i18n } = useTranslation();
   const [currentTime, setCurrentTime] = useState("");
-  const [language, setLanguage] = useState("en");
+
+  // This used to be its own useState("en") never connected to i18next at
+  // all - the dropdown changed, nothing else did. i18n.language is now the
+  // actual source of truth, and switching it persists so a reload keeps the
+  // choice (see config/i18n.ts's getInitialLanguage).
+  function handleLanguageChange(lang: string) {
+    i18n.changeLanguage(lang);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+  }
 
   useEffect(() => {
     const updateTime = () => {
@@ -80,14 +91,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           </div>
 
           {/* Language Selector */}
-          <Select value={language} onValueChange={setLanguage}>
+          <Select value={i18n.language} onValueChange={handleLanguageChange}>
             <SelectTrigger className="w-20 h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="en">EN</SelectItem>
-              <SelectItem value="th">TH</SelectItem>
-              <SelectItem value="zh">ZH</SelectItem>
+              <SelectItem value="zh">中文</SelectItem>
             </SelectContent>
           </Select>
 
