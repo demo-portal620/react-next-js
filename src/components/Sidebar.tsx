@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio } from "lucide-react";
+import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -54,6 +54,18 @@ const menuItems: MenuItem[] = [
     icon: <Radio className="h-4 w-4" />,
     href: "/presence",
     requiredPermission: "VIEW_PRESENCE",
+  },
+  {
+    title: "Inventory",
+    icon: <Package className="h-4 w-4" />,
+    href: "/inventory",
+    requiredPermission: "MANAGE_STOCK",
+  },
+  {
+    title: "Stock Checks",
+    icon: <ClipboardCheck className="h-4 w-4" />,
+    href: "/stock-checks",
+    requiredPermission: "MANAGE_STOCK",
   },
   {
     title: "User Management",

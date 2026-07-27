@@ -1,11 +1,14 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 const USERS_BASE = `${API_BASE_URL}/users`;
 
-// Shape returned by the Spring Boot backend's BaseResponse<T> wrapper
+// Shape returned by the Spring Boot backend's BaseResponse<T> wrapper.
+// text is the already-resolved human-readable string (see
+// com.admin.common.base.exception.Message#getText) - prefer it over the
+// bare code, same convention as apiClient.ts's extractMessage.
 interface BaseResponse<T> {
   success: boolean;
   data: T;
-  messages?: { code: string }[];
+  messages?: { code: string; text?: string }[];
   statusCode: number;
 }
 
@@ -72,6 +75,32 @@ export async function fetchCurrentUser(): Promise<User> {
   if (!res.ok) throw new Error("Failed to fetch current user");
   const body: BaseResponse<User> = await res.json();
   if (!body.success) throw new Error("Not authenticated");
+  return body.data;
+}
+
+// Admin-initiated account creation - distinct from the public self-service
+// /auth/register (authApi.ts). ap-be enforces which role the caller is
+// allowed to grant (see UserServiceImpl.canGrantRole); this just surfaces
+// whatever error it returns (e.g. "not authorized" if you try to grant a
+// role above your own).
+export async function createUser(payload: {
+  username: string;
+  password: string;
+  email: string;
+  firstname?: string;
+  lastname?: string;
+  phoneNumber?: string;
+  roleId: string;
+}): Promise<User> {
+  const res = await fetch(USERS_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  const body: BaseResponse<User> | null = await res.json().catch(() => null);
+  if (!res.ok || !body?.success) {
+    throw new Error(body?.messages?.[0]?.text ?? body?.messages?.[0]?.code ?? "Failed to create user");
+  }
   return body.data;
 }
 

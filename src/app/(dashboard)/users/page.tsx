@@ -29,6 +29,12 @@ export default function UserListPage() {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">User List</h1>
+        <button
+          onClick={() => router.push("/users/new")}
+          className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm"
+        >
+          Add User
+        </button>
       </div>
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
