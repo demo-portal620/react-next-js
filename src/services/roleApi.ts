@@ -30,6 +30,21 @@ export async function fetchRoles(
   return apiGet<RolesResponse>(ROLES_BASE, { page, pageSize, search });
 }
 
+// For UIs that toggle every role at once (e.g. a user's role-assignment
+// pills) rather than paging through a list - walks every page instead of
+// assuming a fixed page size covers all of them.
+export async function fetchAllRoles(): Promise<Role[]> {
+  const pageSize = 100;
+  const first = await fetchRoles(1, pageSize, "");
+  const roles = first.roles;
+  const totalPages = Math.ceil(first.total / first.pageSize);
+  for (let page = 2; page <= totalPages; page++) {
+    const next = await fetchRoles(page, first.pageSize, "");
+    roles.push(...next.roles);
+  }
+  return roles;
+}
+
 export async function fetchRoleById(id: string): Promise<Role> {
   return apiGet<Role>(`${ROLES_BASE}/${id}`);
 }

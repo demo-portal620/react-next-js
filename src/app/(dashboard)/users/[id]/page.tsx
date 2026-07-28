@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fetchUserById, setUserRoles, User } from "@/services/userApi";
-import { fetchRoles, Role } from "@/services/roleApi";
+import { fetchAllRoles, Role } from "@/services/roleApi";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -52,10 +52,10 @@ export default function UserDetailPage() {
   useEffect(() => {
     setLoading(true);
     setError("");
-    Promise.all([fetchUserById(idParam), fetchRoles(1, 100, "")])
-      .then(([userData, rolesData]) => {
+    Promise.all([fetchUserById(idParam), fetchAllRoles()])
+      .then(([userData, roles]) => {
         setUser(userData);
-        setAvailableRoles(rolesData.roles);
+        setAvailableRoles(roles);
       })
       .catch((err) => setError(err.message || "Failed to load user"))
       .finally(() => setLoading(false));
