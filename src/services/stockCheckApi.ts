@@ -1,6 +1,7 @@
-import { apiGet, apiPost } from "@/services/apiClient";
+import { apiGet, apiPost, apiPut } from "@/services/apiClient";
 
 const STOCK_CHECKS_BASE = "/api/stock-checks";
+const WORK_SITE_BASE = "/api/work-site";
 
 // Mirrors ap-be's com.admin.entity.stockcheck.StockCheckTask field-for-field.
 export interface StockCheckTask {
@@ -11,8 +12,22 @@ export interface StockCheckTask {
   submittedDate?: string;
   approvedBy?: string;
   approvedDate?: string;
+  submittedLatitude?: number;
+  submittedLongitude?: number;
+  // null (not just false) means "not enough information to judge" - no
+  // location captured on the worker's device, or no work site configured
+  // yet. Only ever true/false once both exist.
+  offSite?: boolean | null;
   createdBy?: string;
   createdDate?: string;
+}
+
+// Mirrors ap-be's com.admin.entity.stockcheck.WorkSiteConfig field-for-field.
+export interface WorkSiteConfig {
+  id: string;
+  latitude: number | null;
+  longitude: number | null;
+  radiusMeters: number;
 }
 
 // Mirrors ap-be's com.admin.entity.stockcheck.StockCheckTaskItemView.
@@ -64,4 +79,16 @@ export async function createStockCheckTask(payload: {
 
 export async function signOffStockCheckTask(id: string): Promise<StockCheckTask> {
   return apiPost<StockCheckTask>(`${STOCK_CHECKS_BASE}/${id}/sign-off`);
+}
+
+export async function fetchWorkSiteConfig(): Promise<WorkSiteConfig> {
+  return apiGet<WorkSiteConfig>(WORK_SITE_BASE);
+}
+
+export async function updateWorkSiteConfig(payload: {
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+}): Promise<WorkSiteConfig> {
+  return apiPut<WorkSiteConfig>(WORK_SITE_BASE, payload);
 }

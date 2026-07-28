@@ -6,11 +6,14 @@ import {
   StockCheckTask,
   fetchStockCheckTasks,
   createStockCheckTask,
+  fetchWorkSiteConfig,
+  updateWorkSiteConfig,
 } from "@/services/stockCheckApi";
 import { fetchUsers, User } from "@/services/userApi";
 import { Product, fetchProducts } from "@/services/stockApi";
 import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
 import AppDialog from "@/components/custom-ui/app-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,9 +24,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Plus } from "lucide-react";
+import { AlertCircle, LocateFixed, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const statusStyle: Record<string, string> = {
@@ -34,6 +43,7 @@ const statusStyle: Record<string, string> = {
 
 export default function StockChecksPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [tasks, setTasks] = useState<StockCheckTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,6 +59,64 @@ export default function StockChecksPage() {
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+
+  const [siteLatitude, setSiteLatitude] = useState("");
+  const [siteLongitude, setSiteLongitude] = useState("");
+  const [siteRadius, setSiteRadius] = useState("200");
+  const [savingSite, setSavingSite] = useState(false);
+
+  const loadSite = useCallback(() => {
+    fetchWorkSiteConfig()
+      .then((site) => {
+        setSiteLatitude(site.latitude != null ? String(site.latitude) : "");
+        setSiteLongitude(site.longitude != null ? String(site.longitude) : "");
+        setSiteRadius(String(site.radiusMeters));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadSite();
+  }, [loadSite]);
+
+  function useCurrentLocationForSite() {
+    if (!navigator.geolocation) {
+      toast({ variant: "destructive", title: "Geolocation isn't available in this browser" });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setSiteLatitude(String(position.coords.latitude));
+        setSiteLongitude(String(position.coords.longitude));
+      },
+      (err) => {
+        toast({ variant: "destructive", title: "Couldn't get your location", description: err.message });
+      }
+    );
+  }
+
+  async function handleSaveSite() {
+    const latitude = Number(siteLatitude);
+    const longitude = Number(siteLongitude);
+    const radiusMeters = Number(siteRadius);
+    if (!siteLatitude || !siteLongitude || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+      toast({ variant: "destructive", title: "Latitude and longitude are required" });
+      return;
+    }
+    setSavingSite(true);
+    try {
+      await updateWorkSiteConfig({ latitude, longitude, radiusMeters });
+      toast({ description: "Work site updated." });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update work site",
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setSavingSite(false);
+    }
+  }
 
   const load = useCallback(() => {
     setLoading(true);
@@ -136,6 +204,20 @@ export default function StockChecksPage() {
       ),
     },
     {
+      key: "offSite",
+      header: "Location",
+      render: (t) =>
+        t.offSite === true ? (
+          <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive px-2.5 py-0.5 text-xs font-medium">
+            Off-site
+          </span>
+        ) : t.offSite === false ? (
+          <span className="text-muted-foreground text-xs">On-site</span>
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        ),
+    },
+    {
       key: "createdDate",
       header: "Created",
       className: "px-4 py-3 text-muted-foreground",
@@ -157,6 +239,60 @@ export default function StockChecksPage() {
           Create Task
         </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Work Site</CardTitle>
+          <CardDescription>
+            The single location submissions are checked against - a task submitted from
+            outside this radius gets flagged &ldquo;Off-site&rdquo; below for review, it
+            doesn&apos;t get blocked.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-4 items-end">
+          <div className="space-y-1.5">
+            <Label htmlFor="site-lat">Latitude</Label>
+            <Input
+              id="site-lat"
+              value={siteLatitude}
+              onChange={(e) => setSiteLatitude(e.target.value)}
+              placeholder="1.3521"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="site-lng">Longitude</Label>
+            <Input
+              id="site-lng"
+              value={siteLongitude}
+              onChange={(e) => setSiteLongitude(e.target.value)}
+              placeholder="103.8198"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="site-radius">Radius (meters)</Label>
+            <Input
+              id="site-radius"
+              type="number"
+              value={siteRadius}
+              onChange={(e) => setSiteRadius(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={useCurrentLocationForSite}
+              title="Fill in latitude/longitude from this browser's current location"
+            >
+              <LocateFixed className="h-4 w-4" />
+              Use my location
+            </Button>
+            <Button type="button" onClick={handleSaveSite} disabled={savingSite}>
+              {savingSite ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {error && (
         <Alert variant="destructive">

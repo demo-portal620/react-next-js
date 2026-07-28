@@ -100,14 +100,21 @@ export default function StockCheckDetailPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             {task.title || "(untitled task)"}
           </h1>
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium mt-1",
-              statusStyle[task.status] ?? statusStyle.PENDING
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                statusStyle[task.status] ?? statusStyle.PENDING
+              )}
+            >
+              {task.status}
+            </span>
+            {task.offSite === true && (
+              <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive px-2.5 py-0.5 text-xs font-medium">
+                Submitted off-site
+              </span>
             )}
-          >
-            {task.status}
-          </span>
+          </div>
         </div>
         {canSignOff && (
           <Button onClick={handleSignOff} disabled={signingOff}>
