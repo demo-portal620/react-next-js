@@ -3,6 +3,11 @@
 // existing hardcoded strings across the app are not being swept over to
 // this wholesale in one pass, migrate a page's strings here as you touch
 // that page (see roles/page.tsx for the pattern).
+//
+// `as const` + the LabelKey export lets zh/labels.ts type itself as
+// Record<LabelKey, string> - add a key here without its zh counterpart (or
+// vice versa) and `tsc` fails instead of the gap going unnoticed, since a
+// Record type errors on both missing and excess keys.
 const labels = {
   COMMON_SAVE: "Save",
   COMMON_CANCEL: "Cancel",
@@ -15,6 +20,17 @@ const labels = {
   NAVBAR_MY_ACCOUNT: "My Account",
   NAVBAR_MY_PROFILE: "My Profile",
   NAVBAR_LOGOUT: "Logout",
-};
+  SIDEBAR_DASHBOARD: "Dashboard",
+  SIDEBAR_FREELANCERS: "Freelancers",
+  SIDEBAR_APK_VERSIONS: "APK Versions",
+  SIDEBAR_WHOS_ONLINE: "Who's Online",
+  SIDEBAR_INVENTORY: "Inventory",
+  SIDEBAR_STOCK_CHECKS: "Stock Checks",
+  SIDEBAR_USER_MANAGEMENT: "User Management",
+  SIDEBAR_USER_LIST: "User List",
+  SIDEBAR_ROLES: "Roles",
+} as const;
+
+export type LabelKey = keyof typeof labels;
 
 export default labels;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LabelKey } from "@/locales/en/labels";
 import {
   Collapsible,
   CollapsibleContent,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 
 interface SidebarProps {
@@ -18,7 +20,11 @@ interface SidebarProps {
 }
 
 interface MenuItem {
-  title: string;
+  // Label key, not display text - resolved via t() at render time so the
+  // sidebar re-renders in the active language rather than being fixed at
+  // module-load time. Also doubles as this item's React/toggle-state
+  // identity below, same as when it held literal English text.
+  title: LabelKey;
   icon: React.ReactNode;
   href?: string;
   children?: MenuItem[];
@@ -35,50 +41,50 @@ interface MenuItem {
 // bring back once they're implemented.
 const menuItems: MenuItem[] = [
   {
-    title: "Dashboard",
+    title: "SIDEBAR_DASHBOARD",
     icon: <BarChart3 className="h-4 w-4" />,
     href: "/",
   },
   {
-    title: "Freelancers",
+    title: "SIDEBAR_FREELANCERS",
     icon: <Users className="h-4 w-4" />,
     href: "/freelancers",
   },
   {
-    title: "APK Versions",
+    title: "SIDEBAR_APK_VERSIONS",
     icon: <Smartphone className="h-4 w-4" />,
     href: "/apk-versions",
   },
   {
-    title: "Who's Online",
+    title: "SIDEBAR_WHOS_ONLINE",
     icon: <Radio className="h-4 w-4" />,
     href: "/presence",
     requiredPermission: "VIEW_PRESENCE",
   },
   {
-    title: "Inventory",
+    title: "SIDEBAR_INVENTORY",
     icon: <Package className="h-4 w-4" />,
     href: "/inventory",
     requiredPermission: "MANAGE_STOCK",
   },
   {
-    title: "Stock Checks",
+    title: "SIDEBAR_STOCK_CHECKS",
     icon: <ClipboardCheck className="h-4 w-4" />,
     href: "/stock-checks",
     requiredPermission: "MANAGE_STOCK",
   },
   {
-    title: "User Management",
+    title: "SIDEBAR_USER_MANAGEMENT",
     icon: <Users className="h-4 w-4" />,
     children: [
       {
-        title: "User List",
+        title: "SIDEBAR_USER_LIST",
         icon: <Users className="h-4 w-4" />,
         href: "/users",
         requiredPermission: "VIEW_USER",
       },
       {
-        title: "Roles",
+        title: "SIDEBAR_ROLES",
         icon: <Shield className="h-4 w-4" />,
         href: "/roles",
         requiredPermission: "MANAGE_ROLE",
@@ -144,6 +150,7 @@ const menuItems: MenuItem[] = [
 
 export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const [openItems, setOpenItems] = useState<string[]>([]);
 
@@ -219,7 +226,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                         {!collapsed && (
                           <>
                             <span className="ml-2 flex-1 text-left">
-                              {item.title}
+                              {t(item.title)}
                             </span>
                             <ChevronDown
                               className={cn(
@@ -245,7 +252,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                               )}
                             >
                               {child.icon}
-                              <span className="ml-2">{child.title}</span>
+                              <span className="ml-2">{t(child.title)}</span>
                             </Button>
                           </Link>
                         ))}
@@ -263,7 +270,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                       )}
                     >
                       {item.icon}
-                      {!collapsed && <span className="ml-2">{item.title}</span>}
+                      {!collapsed && <span className="ml-2">{t(item.title)}</span>}
                     </Button>
                   </Link>
                 )}
