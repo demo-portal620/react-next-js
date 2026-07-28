@@ -54,9 +54,12 @@ export default function StockChecksPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [workers, setWorkers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [workerSearch, setWorkerSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
   const [title, setTitle] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -139,22 +142,52 @@ export default function StockChecksPage() {
     setTitle("");
     setAssignedTo("");
     setSelectedProductIds([]);
+    setSelectedProducts([]);
+    setWorkerSearch("");
+    setProductSearch("");
     setShowCreateDialog(true);
-    // Fetching a large page as a stand-in for "all" - fine at this app's
-    // scale (a demo inventory/user list), not meant to scale to thousands.
-    fetchUsers(1, 100, "")
-      .then((data) => setWorkers(data.users.filter((u) => u.roles?.some((r) => r.name === "WORKER"))))
-      .catch(() => setWorkers([]));
-    fetchProducts(1, 100, "")
-      .then((data) => setProducts(data.products))
-      .catch(() => setProducts([]));
   }
 
-  function toggleProduct(id: string) {
+  // Debounced, search-driven fetch instead of a flat top-100 pull - these
+  // run whenever the dialog is open and the search text changes (including
+  // on open, when both are empty, to seed the initial page).
+  useEffect(() => {
+    if (!showCreateDialog) return;
+    const handle = setTimeout(() => {
+      fetchUsers(1, 20, workerSearch)
+        .then((data) => setWorkers(data.users.filter((u) => u.roles?.some((r) => r.name === "WORKER"))))
+        .catch(() => setWorkers([]));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [showCreateDialog, workerSearch]);
+
+  useEffect(() => {
+    if (!showCreateDialog) return;
+    const handle = setTimeout(() => {
+      fetchProducts(1, 20, productSearch)
+        .then((data) => setProducts(data.products))
+        .catch(() => setProducts([]));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [showCreateDialog, productSearch]);
+
+  function toggleProduct(product: Product) {
     setSelectedProductIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+      prev.includes(product.id) ? prev.filter((p) => p !== product.id) : [...prev, product.id]
+    );
+    setSelectedProducts((prev) =>
+      prev.some((p) => p.id === product.id)
+        ? prev.filter((p) => p.id !== product.id)
+        : [...prev, product]
     );
   }
+
+  // Union of the current search results and whatever's already checked, so
+  // picking a product then typing a new search doesn't visually "lose" it.
+  const checklistCandidates = [
+    ...selectedProducts,
+    ...products.filter((p) => !selectedProductIds.includes(p.id)),
+  ];
 
   async function handleCreate() {
     setFormError("");
@@ -345,6 +378,11 @@ export default function StockChecksPage() {
           </div>
           <div className="space-y-1.5">
             <Label>Assign to</Label>
+            <Input
+              value={workerSearch}
+              onChange={(e) => setWorkerSearch(e.target.value)}
+              placeholder="Search workers by name..."
+            />
             <Select value={assignedTo} onValueChange={setAssignedTo}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a worker" />
@@ -352,7 +390,7 @@ export default function StockChecksPage() {
               <SelectContent>
                 {workers.length === 0 ? (
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    No WORKER accounts yet.
+                    {workerSearch ? "No matching WORKER accounts." : "No WORKER accounts yet."}
                   </div>
                 ) : (
                   workers.map((w) => (
@@ -365,13 +403,20 @@ export default function StockChecksPage() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Checklist</Label>
+            <Label>Checklist{selectedProductIds.length > 0 ? ` (${selectedProductIds.length} selected)` : ""}</Label>
+            <Input
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              placeholder="Search products by name or SKU..."
+            />
             <Card className="max-h-56 overflow-y-auto">
               <CardContent className="p-2 space-y-1">
-                {products.length === 0 ? (
-                  <p className="text-sm text-muted-foreground p-2">No products in inventory yet.</p>
+                {checklistCandidates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-2">
+                    {productSearch ? "No matching products." : "No products in inventory yet."}
+                  </p>
                 ) : (
-                  products.map((p) => (
+                  checklistCandidates.map((p) => (
                     <label
                       key={p.id}
                       className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50 cursor-pointer"
@@ -379,7 +424,7 @@ export default function StockChecksPage() {
                       <input
                         type="checkbox"
                         checked={selectedProductIds.includes(p.id)}
-                        onChange={() => toggleProduct(p.id)}
+                        onChange={() => toggleProduct(p)}
                       />
                       <span className="flex-1">{p.name}</span>
                       <span className="text-muted-foreground">{p.sku}</span>
