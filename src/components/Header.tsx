@@ -30,7 +30,7 @@ interface HeaderProps {
 export default function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const { currentUser, logout } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [currentTime, setCurrentTime] = useState("");
 
   // This used to be its own useState("en") never connected to i18next at
@@ -106,22 +106,22 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="flex items-center">
                 <span className="uppercase font-bold mr-2">
-                  {displayName || "Account"}
+                  {displayName || t("NAVBAR_ACCOUNT_FALLBACK")}
                 </span>
                 <User className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("NAVBAR_MY_ACCOUNT")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <Settings className="mr-2 h-4 w-4" />
-                <span>My Profile</span>
+                <span>{t("NAVBAR_MY_PROFILE")}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                <span>{t("NAVBAR_LOGOUT")}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
