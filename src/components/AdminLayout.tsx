@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
+import { NotificationProvider } from "@/context/NotificationContext";
 
 export default function AdminLayout({
   children,
@@ -14,23 +15,25 @@ export default function AdminLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="wrapper">
-        <Header onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+    <NotificationProvider>
+      <div className="min-h-screen bg-gray-100">
+        <div className="wrapper">
+          <Header onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
-        <Sidebar collapsed={sidebarCollapsed} />
+          <Sidebar collapsed={sidebarCollapsed} />
 
-        <div
-          className={cn(
-            "content-wrapper pt-14 transition-all duration-300",
-            sidebarCollapsed ? "ml-16" : "ml-64"
-          )}
-        >
-          {children}
+          <div
+            className={cn(
+              "content-wrapper pt-14 transition-all duration-300",
+              sidebarCollapsed ? "ml-16" : "ml-64"
+            )}
+          >
+            {children}
+          </div>
+
+          <Footer collapsed={sidebarCollapsed} />
         </div>
-
-        <Footer collapsed={sidebarCollapsed} />
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

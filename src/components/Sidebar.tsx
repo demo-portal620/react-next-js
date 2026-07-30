@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck } from "lucide-react";
+import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LabelKey } from "@/locales/en/labels";
 import {
@@ -60,6 +60,14 @@ const menuItems: MenuItem[] = [
     icon: <Radio className="h-4 w-4" />,
     href: "/presence",
     requiredPermission: "VIEW_PRESENCE",
+  },
+  {
+    // Ungated - anyone can raise a complaint, same as Dashboard/Freelancers
+    // above. Whether the "Inbox" section within the page itself shows up
+    // is a further, separate MANAGE_COMPLAINTS check inside complaints/page.tsx.
+    title: "SIDEBAR_COMPLAINTS",
+    icon: <MessageSquareWarning className="h-4 w-4" />,
+    href: "/complaints",
   },
   {
     title: "SIDEBAR_INVENTORY",

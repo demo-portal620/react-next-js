@@ -28,6 +28,11 @@ const labels: Record<LabelKey, string> = {
   SIDEBAR_USER_MANAGEMENT: "用户管理",
   SIDEBAR_USER_LIST: "用户列表",
   SIDEBAR_ROLES: "角色",
+  SIDEBAR_COMPLAINTS: "投诉",
+  NOTIFICATIONS_TITLE: "通知",
+  NOTIFICATIONS_MARK_ALL_READ: "全部标为已读",
+  NOTIFICATIONS_EMPTY: "暂无通知。",
+  NOTIFICATIONS_VIEW_ALL: "查看全部",
 };
 
 export default labels;

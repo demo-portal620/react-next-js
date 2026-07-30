@@ -29,6 +29,11 @@ const labels = {
   SIDEBAR_USER_MANAGEMENT: "User Management",
   SIDEBAR_USER_LIST: "User List",
   SIDEBAR_ROLES: "Roles",
+  SIDEBAR_COMPLAINTS: "Complaints",
+  NOTIFICATIONS_TITLE: "Notifications",
+  NOTIFICATIONS_MARK_ALL_READ: "Mark all read",
+  NOTIFICATIONS_EMPTY: "No notifications yet.",
+  NOTIFICATIONS_VIEW_ALL: "View all",
 } as const;
 
 export type LabelKey = keyof typeof labels;

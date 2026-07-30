@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { LANGUAGE_STORAGE_KEY } from "@/config/i18n";
+import NotificationBell from "@/components/NotificationBell";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -100,6 +101,8 @@ export default function Header({ onMenuToggle }: HeaderProps) {
               <SelectItem value="zh">中文</SelectItem>
             </SelectContent>
           </Select>
+
+          <NotificationBell />
 
           {/* User Dropdown */}
           <DropdownMenu>
