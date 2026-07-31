@@ -33,6 +33,7 @@ export interface User {
   email: string;
   phoneNumber?: string;
   roles?: Role[];
+  profilePictureKey?: string;
 }
 
 export interface UsersResponse {
@@ -102,6 +103,33 @@ export async function createUser(payload: {
     throw new Error(body?.messages?.[0]?.text ?? body?.messages?.[0]?.code ?? "Failed to create user");
   }
   return body.data;
+}
+
+// Not sent with a Content-Type header - the browser sets the correct
+// "multipart/form-data; boundary=..." header itself for a FormData body,
+// same reasoning as stockApi.ts's importProducts.
+export async function uploadProfilePicture(file: File): Promise<User> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${USERS_BASE}/me/photo`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+    body: formData,
+  });
+  const body: BaseResponse<User> | null = await res.json().catch(() => null);
+  if (!res.ok || !body?.success) {
+    throw new Error(body?.messages?.[0]?.text ?? body?.messages?.[0]?.code ?? "Failed to upload photo");
+  }
+  return body.data;
+}
+
+// Public endpoint (no auth header needed) - an <img src> can't attach one
+// anyway. ?v= is a required cache-buster, not decoration - the URL is keyed
+// by user id, not by the underlying S3 key, so without it the browser keeps
+// serving cached bytes after a re-upload.
+export function profilePictureUrl(userId: string, profilePictureKey?: string): string | null {
+  if (!profilePictureKey) return null;
+  return `${USERS_BASE}/${userId}/photo?v=${encodeURIComponent(profilePictureKey)}`;
 }
 
 // Replaces this user's entire role assignment with the given role ids.

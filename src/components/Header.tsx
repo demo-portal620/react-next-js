@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { LANGUAGE_STORAGE_KEY } from "@/config/i18n";
 import NotificationBell from "@/components/NotificationBell";
+import { profilePictureUrl } from "@/services/userApi";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -111,7 +112,16 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                 <span className="uppercase font-bold mr-2">
                   {displayName || t("NAVBAR_ACCOUNT_FALLBACK")}
                 </span>
-                <User className="h-4 w-4" />
+                {currentUser && profilePictureUrl(currentUser.id, currentUser.profilePictureKey) ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- backend-streamed, not a static asset Next's optimizer can process
+                  <img
+                    src={profilePictureUrl(currentUser.id, currentUser.profilePictureKey)!}
+                    alt=""
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

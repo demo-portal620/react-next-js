@@ -48,6 +48,8 @@ interface AuthContextValue {
   hasPermission: (name: string) => boolean;
   login: (token: string) => Promise<void>;
   logout: () => void;
+  /** Re-fetches /users/me and updates currentUser - e.g. after a profile photo upload, so Header picks up the change immediately. */
+  refreshCurrentUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -121,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasPermission,
     login,
     logout,
+    refreshCurrentUser: loadCurrentUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
