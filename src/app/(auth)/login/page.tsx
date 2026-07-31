@@ -179,9 +179,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 className="text-blue-600 hover:text-blue-800 font-medium"
-                onClick={() => {
-                  /* Add forgot password logic */
-                }}
+                onClick={() => router.push("/forgot-password")}
               >
                 Forgot password?
               </button>

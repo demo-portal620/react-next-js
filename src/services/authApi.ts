@@ -78,3 +78,42 @@ export async function registerUser(payload: RegisterPayload): Promise<void> {
     throw new Error(firstMessage(body, `Registration failed: ${res.status}`));
   }
 }
+
+// ap-be's AuthController#forgotPassword always responds success whether or
+// not the email matches an account (anti-enumeration) - a thrown Error here
+// means the request itself failed (network/validation), not "email not found".
+export async function requestPasswordReset(email: string): Promise<void> {
+  const url = `${AUTH_BASE}/forgot-password`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  const body: BaseResponse<void> | null = await res.json().catch(() => null);
+
+  if (!res.ok || !body?.success) {
+    throw new Error(firstMessage(body, `Request failed: ${res.status}`));
+  }
+}
+
+export async function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+  const url = `${AUTH_BASE}/reset-password`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token, newPassword }),
+  });
+
+  const body: BaseResponse<void> | null = await res.json().catch(() => null);
+
+  if (!res.ok || !body?.success) {
+    throw new Error(firstMessage(body, `Reset failed: ${res.status}`));
+  }
+}
