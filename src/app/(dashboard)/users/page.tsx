@@ -1,8 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { fetchUsers, User } from "@/services/userApi";
+import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Eye, Plus, Search } from "lucide-react";
 
 export default function UserListPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -12,105 +24,139 @@ export default function UserListPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     setError("");
-    fetchUsers(page, pageSize, "")
+    fetchUsers(page, pageSize, search)
       .then((data) => {
         setUsers(data.users);
         setTotalCount(data.total);
       })
-      .catch((err) => setError(err.message || "Failed to load users"))
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load users"))
       .finally(() => setLoading(false));
-  }, [page, pageSize]);
+  }, [page, pageSize, search]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchInput);
+  }
+
+  const columns: DataTableColumn<User>[] = [
+    { key: "username", header: "Username", className: "px-4 py-3 font-medium" },
+    {
+      key: "name",
+      header: "Name",
+      className: "px-4 py-3 text-muted-foreground",
+      csvValue: (user) => [user.firstname, user.lastname].filter(Boolean).join(" "),
+      render: (user) => [user.firstname, user.lastname].filter(Boolean).join(" ") || "-",
+    },
+    { key: "email", header: "Email", className: "px-4 py-3 text-muted-foreground" },
+    {
+      key: "phoneNumber",
+      header: "Phone",
+      className: "px-4 py-3 text-muted-foreground",
+      render: (user) => user.phoneNumber || "-",
+    },
+    {
+      key: "roles",
+      header: "Roles",
+      csvValue: (user) => (user.roles || []).map((r) => r.name).join("; "),
+      render: (user) => (
+        <div className="flex flex-wrap gap-1">
+          {(user.roles || []).length === 0 ? (
+            <span className="text-muted-foreground">-</span>
+          ) : (
+            (user.roles || []).map((r) => (
+              <span
+                key={r.id}
+                className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium"
+              >
+                {r.name}
+              </span>
+            ))
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">User List</h1>
-        <button
-          onClick={() => router.push("/users/new")}
-          className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm"
-        >
+    <div className="p-6 max-w-6xl mx-auto space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage user accounts, role assignment, and contact details.
+          </p>
+        </div>
+        <Button onClick={() => router.push("/users/new")}>
+          <Plus className="h-4 w-4" />
           Add User
-        </button>
+        </Button>
       </div>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Search</CardTitle>
+          <CardDescription>Search by username, name, or email</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSearchSubmit} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by username, name, or email..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button type="submit" variant="secondary">
+              Search
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <>
-          <table className="w-full border text-sm">
-            <thead className="bg-gray-500">
-              <tr>
-                <th className="border px-2 py-1">Username</th>
-                <th className="border px-2 py-1">Name</th>
-                <th className="border px-2 py-1">Email</th>
-                <th className="border px-2 py-1">Phone</th>
-                <th className="border px-2 py-1">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td className="border px-2 py-1">{user.username}</td>
-                  <td className="border px-2 py-1">
-                    {[user.firstname, user.lastname].filter(Boolean).join(" ")}
-                  </td>
-                  <td className="border px-2 py-1">{user.email}</td>
-                  <td className="border px-2 py-1">{user.phoneNumber}</td>
-                  <td className="border px-2 py-1">
-                    <button
-                      onClick={() => router.push(`/users/${user.id}`)}
-                      className="bg-green-500 text-white px-2 py-1 rounded text-xs"
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="border px-2 py-4 text-center">
-                    No users found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <div className="flex justify-between items-center mt-4">
-            <button
-              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              disabled={page === 1}
-              className="bg-gray-500 text-white px-3 py-1 rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
-
-            <span>
-              Page {page} of {Math.max(Math.ceil(totalCount / pageSize), 1)}
-            </span>
-
-            <button
-              onClick={() =>
-                setPage((prev) =>
-                  prev < Math.ceil(totalCount / pageSize) ? prev + 1 : prev
-                )
-              }
-              disabled={page >= Math.ceil(totalCount / pageSize)}
-              className="bg-gray-500 text-white px-3 py-1 rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-          <div>
-            <p>Total Count: {totalCount}</p>
-          </div>
-        </>
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
+
+      <DataTable
+        columns={columns}
+        rows={users}
+        getRowKey={(user) => user.id}
+        loading={loading}
+        emptyMessage="No users found."
+        itemLabel="user"
+        exportFileName="users"
+        page={page}
+        pageSize={pageSize}
+        total={totalCount}
+        onPageChange={setPage}
+        actions={(user) => (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => router.push(`/users/${user.id}`)}
+            title="View"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        )}
+      />
     </div>
   );
 }

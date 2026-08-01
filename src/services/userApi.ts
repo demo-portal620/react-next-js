@@ -132,6 +132,24 @@ export function profilePictureUrl(userId: string, profilePictureKey?: string): s
   return `${USERS_BASE}/${userId}/photo?v=${encodeURIComponent(profilePictureKey)}`;
 }
 
+// Editable profile fields only - not username, password, or roles, which
+// have their own dedicated paths.
+export async function updateUser(
+  id: string,
+  payload: { email: string; firstname?: string; lastname?: string; phoneNumber?: string }
+): Promise<User> {
+  const res = await fetch(`${USERS_BASE}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  const body: BaseResponse<User> | null = await res.json().catch(() => null);
+  if (!res.ok || !body?.success) {
+    throw new Error(body?.messages?.[0]?.text ?? body?.messages?.[0]?.code ?? "Failed to update user");
+  }
+  return body.data;
+}
+
 // Replaces this user's entire role assignment with the given role ids.
 export async function setUserRoles(id: string, roleIds: string[]): Promise<User> {
   const res = await fetch(`${USERS_BASE}/${id}/roles`, {
