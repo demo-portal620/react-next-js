@@ -8,7 +8,7 @@ its own cadence, so their version numbers aren't kept in lockstep.
 
 ## [Unreleased]
 
-## [0.1.0]
+## [1.0.0]
 
 ### Added
 - Login, registration, and role/permission-based access control.

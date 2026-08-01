@@ -1,10 +1,16 @@
 import { cn } from "@/lib/utils";
+import packageJson from "../../package.json";
 
 interface FooterProps {
   collapsed: boolean;
 }
 
 export default function Footer({ collapsed }: FooterProps) {
+  // Both sourced from real values instead of hardcoded strings - the old
+  // "Version 1.0.0" here was never actually connected to package.json's
+  // version (which was 0.1.0), so the two had already drifted apart.
+  const year = new Date().getFullYear();
+
   return (
     <footer
       className={cn(
@@ -15,10 +21,10 @@ export default function Footer({ collapsed }: FooterProps) {
     >
       <div className="flex justify-between items-center">
         <div>
-          <strong>Copyright &copy; 2024</strong> Admin Portal
+          <strong>Copyright &copy; {year}</strong> Admin Portal
         </div>
         <div className="hidden sm:block">
-          <b>Version</b> 1.0.0
+          <b>Version</b> {packageJson.version}
         </div>
       </div>
     </footer>
