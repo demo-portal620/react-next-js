@@ -33,6 +33,7 @@ const labels: Record<LabelKey, string> = {
   NOTIFICATIONS_MARK_ALL_READ: "全部标为已读",
   NOTIFICATIONS_EMPTY: "暂无通知。",
   NOTIFICATIONS_VIEW_ALL: "查看全部",
+  SIDEBAR_IP_WHITELIST: "IP 白名单",
 };
 
 export default labels;

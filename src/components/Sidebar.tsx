@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning } from "lucide-react";
+import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LabelKey } from "@/locales/en/labels";
 import {
@@ -80,6 +80,14 @@ const menuItems: MenuItem[] = [
     icon: <ClipboardCheck className="h-4 w-4" />,
     href: "/stock-checks",
     requiredPermission: "MANAGE_STOCK",
+  },
+  {
+    // MANAGE_SECURITY is SUPERADMIN-only (see V21 migration) - this item
+    // naturally only shows for that role, no extra check needed here.
+    title: "SIDEBAR_IP_WHITELIST",
+    icon: <ShieldAlert className="h-4 w-4" />,
+    href: "/ip-whitelist",
+    requiredPermission: "MANAGE_SECURITY",
   },
   {
     title: "SIDEBAR_USER_MANAGEMENT",

@@ -34,6 +34,7 @@ const labels = {
   NOTIFICATIONS_MARK_ALL_READ: "Mark all read",
   NOTIFICATIONS_EMPTY: "No notifications yet.",
   NOTIFICATIONS_VIEW_ALL: "View all",
+  SIDEBAR_IP_WHITELIST: "IP Whitelist",
 } as const;
 
 export type LabelKey = keyof typeof labels;
