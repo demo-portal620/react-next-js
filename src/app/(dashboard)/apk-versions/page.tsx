@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
 import {
   Card,
   CardContent,
@@ -32,6 +33,8 @@ export default function ApkVersionsPage() {
   const [versions, setVersions] = useState<ApkVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   // Which row's QR modal is open, if any - the download endpoint is public
   // (see SecurityConfig), so the QR just needs to encode its absolute URL,
@@ -50,14 +53,14 @@ export default function ApkVersionsPage() {
   const load = useCallback(() => {
     setLoading(true);
     setError("");
-    fetchApkVersions(DEFAULT_APP_CODE, 1, 50)
+    fetchApkVersions(DEFAULT_APP_CODE, page, pageSize)
       .then((data) => {
         setVersions(data.versions);
         setTotalCount(data.total);
       })
       .catch((err) => setError(err.message || "Failed to load APK versions"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, pageSize]);
 
   useEffect(() => {
     load();
@@ -92,7 +95,11 @@ export default function ApkVersionsPage() {
       setReleaseNotes("");
       (document.getElementById("apk-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("apk-file-input") as HTMLInputElement).value = "");
-      load();
+      if (page === 1) {
+        load();
+      } else {
+        setPage(1);
+      }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -118,6 +125,50 @@ export default function ApkVersionsPage() {
       alert(err instanceof Error ? err.message : "Failed to delete");
     }
   }
+
+  const columns: DataTableColumn<ApkVersion>[] = [
+    { key: "appCode", header: "App", className: "px-4 py-3 font-medium" },
+    {
+      key: "version",
+      header: "Version",
+      csvValue: (v) => `${v.versionName} (code ${v.versionCode})`,
+      render: (v) => (
+        <>
+          {v.versionName} <span className="text-muted-foreground">(code {v.versionCode})</span>
+        </>
+      ),
+    },
+    { key: "fileName", header: "File", className: "px-4 py-3 text-muted-foreground" },
+    {
+      key: "fileSize",
+      header: "Size",
+      className: "px-4 py-3 text-muted-foreground",
+      csvValue: (v) => formatApkSize(v.fileSize),
+      render: (v) => formatApkSize(v.fileSize),
+    },
+    {
+      key: "createdDate",
+      header: "Uploaded",
+      className: "px-4 py-3 text-muted-foreground",
+      render: (v) => (v.createdDate ? new Date(v.createdDate).toLocaleString() : "-"),
+    },
+    {
+      key: "active",
+      header: "Status",
+      csvValue: (v) => (v.active ? "Active" : "Inactive"),
+      render: (v) => (
+        <button
+          onClick={() => handleToggleActive(v)}
+          className={cn(
+            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+            v.active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+          )}
+        >
+          {v.active ? "Active" : "Inactive"}
+        </button>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-4">
@@ -217,94 +268,44 @@ export default function ApkVersionsPage() {
         </Alert>
       )}
 
-      <Card className="py-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50 text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">App</th>
-                <th className="px-4 py-3 font-medium">Version</th>
-                <th className="px-4 py-3 font-medium">File</th>
-                <th className="px-4 py-3 font-medium">Size</th>
-                <th className="px-4 py-3 font-medium">Uploaded</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium w-24"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                    Loading...
-                  </td>
-                </tr>
-              ) : versions.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                    No builds uploaded yet.
-                  </td>
-                </tr>
-              ) : (
-                versions.map((v) => (
-                  <tr key={v.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="px-4 py-3 font-medium">{v.appCode}</td>
-                    <td className="px-4 py-3">
-                      {v.versionName}{" "}
-                      <span className="text-muted-foreground">(code {v.versionCode})</span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{v.fileName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatApkSize(v.fileSize)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {v.createdDate ? new Date(v.createdDate).toLocaleString() : "-"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleToggleActive(v)}
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          v.active
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {v.active ? "Active" : "Inactive"}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          title="Show QR code to download on a phone"
-                          onClick={() => setQrVersion(v)}
-                        >
-                          <QrCode className="h-4 w-4" />
-                        </Button>
-                        <a href={apkDownloadUrl(v.id)}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </a>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleDelete(v.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <p className="text-sm text-muted-foreground">{totalCount} build(s) total</p>
+      <DataTable
+        columns={columns}
+        rows={versions}
+        getRowKey={(v) => v.id}
+        loading={loading}
+        emptyMessage="No builds uploaded yet."
+        itemLabel="build"
+        page={page}
+        pageSize={pageSize}
+        total={totalCount}
+        onPageChange={setPage}
+        actions={(v) => (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Show QR code to download on a phone"
+              onClick={() => setQrVersion(v)}
+            >
+              <QrCode className="h-4 w-4" />
+            </Button>
+            <a href={apkDownloadUrl(v.id)}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Download className="h-4 w-4" />
+              </Button>
+            </a>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleDelete(v.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      />
 
       <AppDialog
         title={qrVersion ? `Download ${qrVersion.appCode} ${qrVersion.versionName}` : ""}
