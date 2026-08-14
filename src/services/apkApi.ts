@@ -18,6 +18,7 @@ export interface ApkVersion {
   fileSize: number;
   releaseNotes?: string;
   active: boolean;
+  downloadCount: number;
   createdDate?: string;
 }
 

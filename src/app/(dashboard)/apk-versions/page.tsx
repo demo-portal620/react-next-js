@@ -153,6 +153,11 @@ export default function ApkVersionsPage() {
       render: (v) => (v.createdDate ? new Date(v.createdDate).toLocaleString() : "-"),
     },
     {
+      key: "downloadCount",
+      header: "Downloads",
+      className: "px-4 py-3 text-muted-foreground",
+    },
+    {
       key: "active",
       header: "Status",
       csvValue: (v) => (v.active ? "Active" : "Inactive"),
