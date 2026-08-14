@@ -117,3 +117,42 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
     throw new Error(firstMessage(body, `Reset failed: ${res.status}`));
   }
 }
+
+export async function verifyEmail(token: string): Promise<void> {
+  const url = `${AUTH_BASE}/verify-email`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token }),
+  });
+
+  const body: BaseResponse<void> | null = await res.json().catch(() => null);
+
+  if (!res.ok || !body?.success) {
+    throw new Error(firstMessage(body, `Verification failed: ${res.status}`));
+  }
+}
+
+// ap-be's AuthController#resendVerification always responds success whether
+// or not the email matches an unverified account (anti-enumeration) - a
+// thrown Error here means the request itself failed, not "email not found".
+export async function resendVerification(email: string): Promise<void> {
+  const url = `${AUTH_BASE}/resend-verification`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  const body: BaseResponse<void> | null = await res.json().catch(() => null);
+
+  if (!res.ok || !body?.success) {
+    throw new Error(firstMessage(body, `Request failed: ${res.status}`));
+  }
+}

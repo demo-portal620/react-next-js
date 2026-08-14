@@ -60,8 +60,8 @@ export default function RegisterPage() {
         lastname: form.lastname || undefined,
         phoneNumber: form.phoneNumber || undefined,
       });
-      setSuccess("Account created. Redirecting to login...");
-      setTimeout(() => router.push("/login"), 1200);
+      setSuccess("Account created. Check your email for a verification link before logging in.");
+      setTimeout(() => router.push("/login"), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
     } finally {
