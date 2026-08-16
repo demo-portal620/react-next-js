@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import { NotificationProvider } from "@/context/NotificationContext";
+
+// Matches Tailwind's `md` breakpoint - a full-width (16rem) sidebar leaves
+// next to nothing for content below this.
+const MOBILE_BREAKPOINT = 768;
 
 export default function AdminLayout({
   children,
@@ -13,6 +17,21 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // One-directional on purpose: forces collapsed when the viewport shrinks
+  // below the breakpoint, but doesn't force it back open when growing past
+  // it again, so a user's own manual toggle at desktop width isn't fought
+  // by an unrelated resize event.
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth < MOBILE_BREAKPOINT) {
+        setSidebarCollapsed(true);
+      }
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <NotificationProvider>

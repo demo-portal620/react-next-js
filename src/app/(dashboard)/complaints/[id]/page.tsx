@@ -165,7 +165,7 @@ export default function ComplaintDetailPage() {
           placeholder="Write a reply..."
           rows={3}
         />
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Button onClick={handleReply} disabled={posting || !reply.trim()}>
             {posting ? "Posting..." : "Post Reply"}
           </Button>

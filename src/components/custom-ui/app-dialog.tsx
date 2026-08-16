@@ -52,7 +52,13 @@ export default function AppDialog({
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        style={{ width, maxWidth: width, height }}
+        // DialogContent's own class already caps width at
+        // calc(100%-2rem) so it can never overflow a narrow viewport -
+        // an inline maxWidth here would override that (inline style always
+        // beats a class), so callers requesting a fixed width (e.g. 480px)
+        // still get clamped down on a phone screen via min(), not just cut
+        // off past the edge.
+        style={{ width, maxWidth: width ? `min(${width}, calc(100% - 2rem))` : undefined, height }}
         className="flex max-h-[90vh] flex-col"
       >
         {showHeader && (

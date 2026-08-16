@@ -164,7 +164,7 @@ export default function UserDetailPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">User Detail</h1>
           <p className="text-sm text-muted-foreground">{user?.username}</p>
@@ -196,7 +196,7 @@ export default function UserDetailPage() {
 
           {isEditing && canEditFields ? (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="u-firstname">First Name</Label>
                   <Input

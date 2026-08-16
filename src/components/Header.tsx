@@ -109,7 +109,11 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="flex items-center">
-                <span className="uppercase font-bold mr-2">
+                {/* Hidden below sm, same as the clock above - a long display
+                    name here had no truncation or wrap and could overflow
+                    the header row on a narrow screen. Still fully visible
+                    once the dropdown opens (DropdownMenuLabel shows it). */}
+                <span className="hidden sm:inline uppercase font-bold mr-2 max-w-32 truncate">
                   {displayName || t("NAVBAR_ACCOUNT_FALLBACK")}
                 </span>
                 {currentUser && profilePictureUrl(currentUser.id, currentUser.profilePictureKey) ? (

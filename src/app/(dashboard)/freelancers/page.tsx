@@ -108,14 +108,14 @@ export default function FreelancerListPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Freelancer Directory</h1>
           <p className="text-sm text-muted-foreground">
             Manage the CDN freelancer directory - search, register, edit, archive and remove entries.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             onClick={handleExport}
@@ -248,11 +248,11 @@ export default function FreelancerListPage() {
         </div>
       </Card>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
           {totalCount} freelancer{totalCount === 1 ? "" : "s"} total
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 sm:justify-end">
           <Button
             variant="outline"
             size="sm"
