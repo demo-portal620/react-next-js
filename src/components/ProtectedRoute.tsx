@@ -2,15 +2,24 @@
 
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
 
 interface ProtectedRouteProps {
   children: ReactNode;
   fallback?: ReactNode;
+  // Looked up per-route from config/menuConfig.ts (see
+  // lib/routePermissions.ts) by the dashboard layout, so this stays in sync
+  // with what the Sidebar nav gates instead of each page checking its own
+  // permission string. Direct URL navigation would otherwise bypass the
+  // Sidebar's hasPermission filtering entirely.
+  requiredPermission?: string;
 }
 
-export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+export function ProtectedRoute({ children, fallback, requiredPermission }: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, hasPermission } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +41,20 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
 
   if (!isAuthenticated) {
     return fallback || null;
+  }
+
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold text-gray-900">{t("FORBIDDEN_TITLE")}</h1>
+          <p className="mt-2 text-gray-600">{t("FORBIDDEN_MESSAGE")}</p>
+          <Button className="mt-4" onClick={() => router.push("/")}>
+            {t("FORBIDDEN_BACK")}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

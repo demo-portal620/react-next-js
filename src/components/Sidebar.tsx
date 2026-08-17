@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LabelKey } from "@/locales/en/labels";
+import { menuConfig } from "@/config/menuConfig";
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,141 +29,36 @@ interface MenuItem {
   icon: React.ReactNode;
   href?: string;
   children?: MenuItem[];
-  // Mirrors th-pgs's Thymeleaf sec:authorize="hasAuthority('X')" on a nav
-  // item - omit for "visible to anyone logged in" (e.g. Dashboard,
-  // Freelancers - the latter's backend endpoint is public too, so gating
-  // just the nav link would be inconsistent with what's actually callable).
   requiredPermission?: string;
 }
 
-// Trimmed down to what's actually built for now. The rest of the modules
-// below (Sub Accounts, Bank/Credit/Order Management) are unused placeholders
-// with no real pages behind them yet - kept commented out so they're easy to
-// bring back once they're implemented.
-const menuItems: MenuItem[] = [
-  {
-    title: "SIDEBAR_DASHBOARD",
-    icon: <BarChart3 className="h-4 w-4" />,
-    href: "/",
-  },
-  {
-    title: "SIDEBAR_FREELANCERS",
-    icon: <Users className="h-4 w-4" />,
-    href: "/freelancers",
-  },
-  {
-    title: "SIDEBAR_APK_VERSIONS",
-    icon: <Smartphone className="h-4 w-4" />,
-    href: "/apk-versions",
-  },
-  {
-    title: "SIDEBAR_WHOS_ONLINE",
-    icon: <Radio className="h-4 w-4" />,
-    href: "/presence",
-    requiredPermission: "VIEW_PRESENCE",
-  },
-  {
-    // Ungated - anyone can raise a complaint, same as Dashboard/Freelancers
-    // above. Whether the "Inbox" section within the page itself shows up
-    // is a further, separate MANAGE_COMPLAINTS check inside complaints/page.tsx.
-    title: "SIDEBAR_COMPLAINTS",
-    icon: <MessageSquareWarning className="h-4 w-4" />,
-    href: "/complaints",
-  },
-  {
-    title: "SIDEBAR_INVENTORY",
-    icon: <Package className="h-4 w-4" />,
-    href: "/inventory",
-    requiredPermission: "MANAGE_STOCK",
-  },
-  {
-    title: "SIDEBAR_STOCK_CHECKS",
-    icon: <ClipboardCheck className="h-4 w-4" />,
-    href: "/stock-checks",
-    requiredPermission: "MANAGE_STOCK",
-  },
-  {
-    // MANAGE_SECURITY is SUPERADMIN-only (see V21 migration) - this item
-    // naturally only shows for that role, no extra check needed here.
-    title: "SIDEBAR_IP_WHITELIST",
-    icon: <ShieldAlert className="h-4 w-4" />,
-    href: "/ip-whitelist",
-    requiredPermission: "MANAGE_SECURITY",
-  },
-  {
-    title: "SIDEBAR_USER_MANAGEMENT",
-    icon: <Users className="h-4 w-4" />,
-    children: [
-      {
-        title: "SIDEBAR_USER_LIST",
-        icon: <Users className="h-4 w-4" />,
-        href: "/users",
-        requiredPermission: "VIEW_USER",
-      },
-      {
-        title: "SIDEBAR_ROLES",
-        icon: <Shield className="h-4 w-4" />,
-        href: "/roles",
-        requiredPermission: "MANAGE_ROLE",
-      },
-    ],
-  },
-  /*
-  {
-    title: "Sub Account Listing",
-    icon: <CreditCard className="h-4 w-4" />,
-    href: "/sub-accounts",
-  },
-  {
-    title: "Bank Management",
-    icon: <University className="h-4 w-4" />,
-    children: [
-      {
-        title: "Pay In Account",
-        icon: <CreditCard className="h-4 w-4" />,
-        href: "/bank/payin",
-      },
-    ],
-  },
-  {
-    title: "Credit Management",
-    icon: <Coins className="h-4 w-4" />,
-    children: [
-      {
-        title: "Personal Credit",
-        icon: <Coins className="h-4 w-4" />,
-        href: "/credit/personal",
-      },
-      {
-        title: "Credit Transaction",
-        icon: <Coins className="h-4 w-4" />,
-        href: "/credit/transactions",
-      },
-      {
-        title: "Credit History",
-        icon: <Coins className="h-4 w-4" />,
-        href: "/credit/history",
-      },
-    ],
-  },
-  {
-    title: "Order Management",
-    icon: <DollarSign className="h-4 w-4" />,
-    children: [
-      {
-        title: "Pay In Transaction",
-        icon: <Coins className="h-4 w-4" />,
-        href: "/orders/payin",
-      },
-      {
-        title: "Transaction Summary",
-        icon: <FileText className="h-4 w-4" />,
-        href: "/orders/summary",
-      },
-    ],
-  },
-  */
-];
+// Icons layered onto config/menuConfig.ts's data-only tree (title -> icon).
+// The href/requiredPermission data itself lives in menuConfig so that
+// lib/routePermissions.ts (route-level guarding) shares one source of truth
+// with what's shown here instead of duplicating permission strings.
+const ICON_MAP: Partial<Record<LabelKey, React.ReactNode>> = {
+  SIDEBAR_DASHBOARD: <BarChart3 className="h-4 w-4" />,
+  SIDEBAR_FREELANCERS: <Users className="h-4 w-4" />,
+  SIDEBAR_APK_VERSIONS: <Smartphone className="h-4 w-4" />,
+  SIDEBAR_WHOS_ONLINE: <Radio className="h-4 w-4" />,
+  SIDEBAR_COMPLAINTS: <MessageSquareWarning className="h-4 w-4" />,
+  SIDEBAR_INVENTORY: <Package className="h-4 w-4" />,
+  SIDEBAR_STOCK_CHECKS: <ClipboardCheck className="h-4 w-4" />,
+  SIDEBAR_IP_WHITELIST: <ShieldAlert className="h-4 w-4" />,
+  SIDEBAR_USER_MANAGEMENT: <Users className="h-4 w-4" />,
+  SIDEBAR_USER_LIST: <Users className="h-4 w-4" />,
+  SIDEBAR_ROLES: <Shield className="h-4 w-4" />,
+};
+
+function withIcons(items: typeof menuConfig): MenuItem[] {
+  return items.map((item) => ({
+    ...item,
+    icon: ICON_MAP[item.title],
+    children: item.children ? withIcons(item.children) : undefined,
+  }));
+}
+
+const menuItems: MenuItem[] = withIcons(menuConfig);
 
 export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();

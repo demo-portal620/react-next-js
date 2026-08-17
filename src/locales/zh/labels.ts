@@ -34,6 +34,9 @@ const labels: Record<LabelKey, string> = {
   NOTIFICATIONS_EMPTY: "暂无通知。",
   NOTIFICATIONS_VIEW_ALL: "查看全部",
   SIDEBAR_IP_WHITELIST: "IP 白名单",
+  FORBIDDEN_TITLE: "拒绝访问",
+  FORBIDDEN_MESSAGE: "您没有权限查看此页面。",
+  FORBIDDEN_BACK: "返回仪表盘",
 };
 
 export default labels;
