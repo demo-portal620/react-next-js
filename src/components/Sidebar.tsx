@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning, ShieldAlert } from "lucide-react";
+import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning, ShieldAlert, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LabelKey } from "@/locales/en/labels";
 import { menuConfig } from "@/config/menuConfig";
@@ -45,6 +45,7 @@ const ICON_MAP: Partial<Record<LabelKey, React.ReactNode>> = {
   SIDEBAR_INVENTORY: <Package className="h-4 w-4" />,
   SIDEBAR_STOCK_CHECKS: <ClipboardCheck className="h-4 w-4" />,
   SIDEBAR_IP_WHITELIST: <ShieldAlert className="h-4 w-4" />,
+  SIDEBAR_TELEGRAM_ALERTS: <Send className="h-4 w-4" />,
   SIDEBAR_USER_MANAGEMENT: <Users className="h-4 w-4" />,
   SIDEBAR_USER_LIST: <Users className="h-4 w-4" />,
   SIDEBAR_ROLES: <Shield className="h-4 w-4" />,

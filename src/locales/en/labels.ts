@@ -35,6 +35,7 @@ const labels = {
   NOTIFICATIONS_EMPTY: "No notifications yet.",
   NOTIFICATIONS_VIEW_ALL: "View all",
   SIDEBAR_IP_WHITELIST: "IP Whitelist",
+  SIDEBAR_TELEGRAM_ALERTS: "Telegram Alerts",
   FORBIDDEN_TITLE: "Access Denied",
   FORBIDDEN_MESSAGE: "You don't have permission to view this page.",
   FORBIDDEN_BACK: "Back to Dashboard",

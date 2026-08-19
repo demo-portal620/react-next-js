@@ -62,6 +62,11 @@ export const menuConfig: MenuItemConfig[] = [
     requiredPermission: "MANAGE_SECURITY",
   },
   {
+    title: "SIDEBAR_TELEGRAM_ALERTS",
+    href: "/telegram-alerts",
+    requiredPermission: "MANAGE_SECURITY",
+  },
+  {
     title: "SIDEBAR_USER_MANAGEMENT",
     children: [
       {
