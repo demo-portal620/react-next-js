@@ -13,8 +13,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, User, Lock, AlertCircle } from "lucide-react";
-import { loginUser } from "@/services/authApi";
+import { Eye, EyeOff, User, Lock, AlertCircle, ShieldCheck } from "lucide-react";
+import { loginUser, verifyLoginTotp } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
@@ -25,6 +25,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Set once loginUser() reports requiresTotp: true - switches the form
+  // below to the "enter your authenticator code" step instead of resetting
+  // back to username/password (the pendingToken already proves the
+  // password was correct, so there's no reason to ask for it again).
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,22 +46,22 @@ export default function LoginPage() {
     }
 
     try {
-      // Make actual API call
       const result = await loginUser(username, password);
 
-      // Handle successful login
-      console.log("Login successful:", result);
+      if (result.requiresTotp && result.pendingToken) {
+        setPendingToken(result.pendingToken);
+        setError("");
+        return;
+      }
 
       // Store the token and load the current user into AuthContext
       if (result.token) {
         await login(result.token);
       }
 
-      // Clear any previous errors and redirect
       setError("");
       router.push("/");
     } catch (error) {
-      // Handle API errors
       console.error("Login error:", error);
       setError(
         error instanceof Error
@@ -62,7 +69,35 @@ export default function LoginPage() {
           : "Login failed. Please try again."
       );
     } finally {
-      // Always stop loading state
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyTotp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+
+    if (!pendingToken || !totpCode) {
+      setError("Enter the 6-digit code from your authenticator.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await verifyLoginTotp(pendingToken, totpCode);
+      if (result.token) {
+        await login(result.token);
+      }
+      setError("");
+      router.push("/");
+    } catch (error) {
+      console.error("TOTP verification error:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Verification failed. Please try again."
+      );
+    } finally {
       setIsLoading(false);
     }
   };
@@ -95,6 +130,67 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {pendingToken ? (
+            <form onSubmit={handleVerifyTotp} className="space-y-4">
+              {error && (
+                <Alert variant="destructive" className="animate-in fade-in-50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="totp-code" className="text-sm font-medium text-gray-700">
+                  Authenticator code
+                </Label>
+                <div className="relative">
+                  <ShieldCheck className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="totp-code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 tracking-widest"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Enter the 6-digit code from the Authenticator screen in the admin-portal Android app.
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Verifying...</span>
+                  </div>
+                ) : (
+                  "Verify"
+                )}
+              </Button>
+
+              <button
+                type="button"
+                className="w-full text-center text-sm text-gray-600 hover:text-gray-800"
+                onClick={() => {
+                  setPendingToken(null);
+                  setTotpCode("");
+                  setError("");
+                }}
+              >
+                Back to sign in
+              </button>
+            </form>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive" className="animate-in fade-in-50">
@@ -212,6 +308,7 @@ export default function LoginPage() {
               </button>
             </p>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>

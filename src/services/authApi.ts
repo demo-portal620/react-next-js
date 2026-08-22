@@ -13,8 +13,12 @@ interface BaseResponse<T> {
 }
 
 // Mirrors ap-be's com.admin.dto.auth.LoginResponseDto field-for-field.
+// token is null when requiresTotp is true - the caller must POST
+// pendingToken + a 6-digit code to /auth/login/verify-totp to get a real one.
 export interface LoginResponseDto {
-  token: string;
+  token: string | null;
+  requiresTotp: boolean;
+  pendingToken: string | null;
 }
 
 function firstMessage(body: BaseResponse<unknown> | null, fallback: string): string {
@@ -43,6 +47,29 @@ export async function loginUser(username: string, password: string): Promise<Log
 
   if (!res.ok || !body?.success) {
     throw new Error(firstMessage(body, `Login failed: ${res.status}`));
+  }
+
+  return body.data;
+}
+
+// Second step of login when loginUser() returns requiresTotp: true -
+// submits the code shown on the user's authenticator (ap-android's
+// Authenticator screen) alongside the pendingToken from step one.
+export async function verifyLoginTotp(pendingToken: string, code: string): Promise<LoginResponseDto> {
+  const url = `${AUTH_BASE}/login/verify-totp`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ pendingToken, code }),
+  });
+
+  const body: BaseResponse<LoginResponseDto> | null = await res.json().catch(() => null);
+
+  if (!res.ok || !body?.success) {
+    throw new Error(firstMessage(body, `Verification failed: ${res.status}`));
   }
 
   return body.data;

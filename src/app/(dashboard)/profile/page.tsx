@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { User as UserIcon, AlertCircle, Camera } from "lucide-react";
+import { User as UserIcon, AlertCircle, Camera, ShieldCheck } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,7 +10,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { fetchCurrentUser, uploadProfilePicture, profilePictureUrl, User } from "@/services/userApi";
+import { fetchTotpStatus, disableTotp } from "@/services/totpApi";
 import { useAuth } from "@/context/AuthContext";
 
 function Field({ label, value }: { label: string; value?: string }) {
@@ -31,12 +35,46 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [totpEnabled, setTotpEnabled] = useState<boolean | null>(null);
+  const [totpLoading, setTotpLoading] = useState(true);
+  const [disablingTotp, setDisablingTotp] = useState(false);
+  const [totpPassword, setTotpPassword] = useState("");
+  const [totpError, setTotpError] = useState("");
+  const [totpSubmitting, setTotpSubmitting] = useState(false);
+
   useEffect(() => {
     fetchCurrentUser()
       .then(setUser)
       .catch((err) => setError(err.message || "Failed to load profile"))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchTotpStatus()
+      .then((status) => setTotpEnabled(status.enabled))
+      .catch(() => setTotpEnabled(null))
+      .finally(() => setTotpLoading(false));
+  }, []);
+
+  async function handleDisableTotp(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!totpPassword) {
+      setTotpError("Enter your current password to confirm.");
+      return;
+    }
+    setTotpError("");
+    setTotpSubmitting(true);
+    try {
+      await disableTotp(totpPassword);
+      setTotpEnabled(false);
+      setDisablingTotp(false);
+      setTotpPassword("");
+    } catch (err) {
+      setTotpError(err instanceof Error ? err.message : "Failed to disable two-factor authentication");
+    } finally {
+      setTotpSubmitting(false);
+    }
+  }
 
   // Revoke the object URL once it's no longer needed, rather than leaking
   // it for the lifetime of the page.
@@ -139,6 +177,66 @@ export default function ProfilePage() {
             </div>
           ) : null}
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle className="text-base">Two-Factor Authentication</CardTitle>
+              <CardDescription>
+                {totpLoading
+                  ? "Loading..."
+                  : totpEnabled
+                  ? "Enabled - codes come from the admin-portal Android app."
+                  : "Disabled - optional, enable it from the Authenticator screen in the admin-portal Android app."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        {!totpLoading && totpEnabled && (
+          <CardContent className="space-y-3">
+            {totpError && (
+              <Alert variant="destructive">
+                <AlertDescription>{totpError}</AlertDescription>
+              </Alert>
+            )}
+            {disablingTotp ? (
+              <form onSubmit={handleDisableTotp} className="flex items-end gap-3">
+                <div className="space-y-1.5 flex-1">
+                  <Label htmlFor="totp-disable-password">Current password</Label>
+                  <Input
+                    id="totp-disable-password"
+                    type="password"
+                    value={totpPassword}
+                    onChange={(e) => setTotpPassword(e.target.value)}
+                    disabled={totpSubmitting}
+                  />
+                </div>
+                <Button type="submit" variant="destructive" disabled={totpSubmitting}>
+                  {totpSubmitting ? "Disabling..." : "Confirm"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={totpSubmitting}
+                  onClick={() => {
+                    setDisablingTotp(false);
+                    setTotpPassword("");
+                    setTotpError("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </form>
+            ) : (
+              <Button variant="outline" onClick={() => setDisablingTotp(true)}>
+                Disable
+              </Button>
+            )}
+          </CardContent>
+        )}
       </Card>
     </div>
   );
