@@ -43,7 +43,12 @@ export default function AdminLayout({
 
           <div
             className={cn(
-              "content-wrapper pt-14 transition-all duration-300",
+              // pb-16 clears the fixed footer's height - without it, any
+              // page whose content reaches near the bottom of the viewport
+              // (e.g. a table's pagination controls) renders underneath the
+              // footer instead of above it, since `fixed` content takes no
+              // space in normal flow.
+              "content-wrapper pt-14 pb-16 transition-all duration-300",
               sidebarCollapsed ? "ml-16" : "ml-64"
             )}
           >

@@ -145,7 +145,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="content-wrapper p-6 pb-16">
+    <div className="content-wrapper p-6">
       {/* Content Header */}
       <div className="content-header mb-6">
         <div className="container-fluid">
