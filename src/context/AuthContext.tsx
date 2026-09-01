@@ -86,6 +86,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadCurrentUser]);
 
+  // localStorage is shared across every tab on this origin, but each tab's
+  // own currentUser state is only loaded once at mount - without this, a
+  // tab keeps showing whoever was logged in when it loaded while silently
+  // sending requests under the token now in localStorage (apiClient reads
+  // it fresh on every call), since a different login/logout in another tab
+  // overwrote it. The `storage` event only fires in OTHER tabs, not the one
+  // that made the change, so this is exactly the signal needed to re-sync.
+  useEffect(() => {
+    function handleStorageChange(e: StorageEvent) {
+      if (e.key !== "authToken") return;
+      if (authUtils.isAuthenticated()) {
+        loadCurrentUser();
+      } else {
+        dispatch({ type: "UNAUTHENTICATED" });
+      }
+    }
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [loadCurrentUser]);
+
   const login = useCallback(
     async (token: string) => {
       authUtils.setToken(token);
