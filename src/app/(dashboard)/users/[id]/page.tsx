@@ -75,14 +75,22 @@ export default function UserDetailPage() {
   useEffect(() => {
     setLoading(true);
     setError("");
-    Promise.all([fetchUserById(idParam), fetchAllRoles()])
+    // The full role catalog is only fetchable by someone holding
+    // MANAGE_ROLE - a caller without it (e.g. an ADMIN with just
+    // VIEW_USER/EDIT_USER) previously still triggered this fetch
+    // unconditionally, which the backend correctly rejects but this page
+    // had no graceful handling for. Skipping it entirely for a caller who
+    // can't use it anyway avoids that failure and matches what they're
+    // actually allowed to see.
+    const rolesPromise = canManageRoles ? fetchAllRoles() : Promise.resolve([]);
+    Promise.all([fetchUserById(idParam), rolesPromise])
       .then(([userData, roles]) => {
         setUser(userData);
         setAvailableRoles(roles);
       })
       .catch((err) => setError(err.message || "Failed to load user"))
       .finally(() => setLoading(false));
-  }, [idParam]);
+  }, [idParam, canManageRoles]);
 
   function startEdit() {
     if (!user) return;
@@ -286,26 +294,36 @@ export default function UserDetailPage() {
           <CardTitle className="text-base">Roles</CardTitle>
         </CardHeader>
         <CardContent>
-          {!canManageRoles && !isEditing && (
-            <p className="text-xs text-muted-foreground mb-2">
-              You don&apos;t have permission to change role assignments.
-            </p>
+          {canManageRoles ? (
+            <div className="flex flex-wrap gap-2">
+              {availableRoles.length === 0 && (
+                <p className="text-sm text-muted-foreground">No roles exist yet.</p>
+              )}
+              {availableRoles.map((role) => (
+                <TogglePill
+                  key={role.id}
+                  label={role.name}
+                  selected={displayedRoleIds.has(role.id)}
+                  onClick={isEditing ? () => toggleStagedRole(role.id) : undefined}
+                />
+              ))}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground mb-2">
+                You don&apos;t have permission to manage roles - showing this user&apos;s assigned roles only.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(user?.roles || []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No roles assigned.</p>
+                ) : (
+                  (user?.roles || []).map((role) => (
+                    <TogglePill key={role.id} label={role.name} selected />
+                  ))
+                )}
+              </div>
+            </>
           )}
-          <div className="flex flex-wrap gap-2">
-            {availableRoles.length === 0 && (
-              <p className="text-sm text-muted-foreground">No roles exist yet.</p>
-            )}
-            {availableRoles.map((role) => (
-              <TogglePill
-                key={role.id}
-                label={role.name}
-                selected={displayedRoleIds.has(role.id)}
-                onClick={
-                  isEditing && canManageRoles ? () => toggleStagedRole(role.id) : undefined
-                }
-              />
-            ))}
-          </div>
         </CardContent>
       </Card>
 
