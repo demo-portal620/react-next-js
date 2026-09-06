@@ -150,6 +150,20 @@ export async function updateUser(
   return body.data;
 }
 
+// Admin-initiated equivalent of the public "forgot password" flow - sends
+// the target a reset-password email, same as if they'd requested it
+// themselves. The admin never sees/sets the new password directly.
+export async function resetPasswordForUser(id: string): Promise<void> {
+  const res = await fetch(`${USERS_BASE}/${id}/reset-password`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+  });
+  const body: BaseResponse<void> | null = await res.json().catch(() => null);
+  if (!res.ok || !body?.success) {
+    throw new Error(body?.messages?.[0]?.text ?? body?.messages?.[0]?.code ?? "Failed to send reset email");
+  }
+}
+
 // Replaces this user's entire role assignment with the given role ids.
 export async function setUserRoles(id: string, roleIds: string[]): Promise<User> {
   const res = await fetch(`${USERS_BASE}/${id}/roles`, {

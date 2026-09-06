@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { fetchUserById, updateUser, setUserRoles, User } from "@/services/userApi";
+import { fetchUserById, updateUser, setUserRoles, resetPasswordForUser, User } from "@/services/userApi";
 import { fetchAllRoles, Role } from "@/services/roleApi";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Pencil, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, KeyRound, Pencil, X } from "lucide-react";
 
 function TogglePill({
   label,
@@ -70,6 +70,7 @@ export default function UserDetailPage() {
   const [stagedRoleIds, setStagedRoleIds] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [sendingReset, setSendingReset] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -137,6 +138,23 @@ export default function UserDetailPage() {
     }
   }
 
+  async function handleSendReset() {
+    if (!user) return;
+    setSendingReset(true);
+    try {
+      await resetPasswordForUser(idParam);
+      toast({ description: `Password reset email sent to ${user.email}.` });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Failed to send reset email",
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setSendingReset(false);
+    }
+  }
+
   if (loading) return <div className="p-6 max-w-2xl mx-auto">Loading...</div>;
 
   if (error) {
@@ -169,11 +187,21 @@ export default function UserDetailPage() {
           <h1 className="text-2xl font-semibold tracking-tight">User Detail</h1>
           <p className="text-sm text-muted-foreground">{user?.username}</p>
         </div>
-        {canEdit && !isEditing && (
-          <Button onClick={startEdit}>
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
+        {!isEditing && (
+          <div className="flex gap-2">
+            {canEditFields && (
+              <Button variant="outline" onClick={handleSendReset} disabled={sendingReset}>
+                <KeyRound className="h-4 w-4" />
+                {sendingReset ? "Sending..." : "Reset Password"}
+              </Button>
+            )}
+            {canEdit && (
+              <Button onClick={startEdit}>
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
