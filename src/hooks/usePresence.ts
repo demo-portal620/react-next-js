@@ -16,14 +16,7 @@ interface PresenceListMessage {
   users?: PresenceUser[];
 }
 
-/**
- * Connects to /ws/presence for the lifetime of the calling component,
- * reporting `activity` as this browser's current activity and returning
- * the live list of everyone else connected (web or Android). Native
- * browser WebSocket - no client library needed, matching PresenceClient.kt
- * on the Android side and PresenceWebSocketConfig on the backend (plain
- * WebSocket, not STOMP).
- */
+// Connects to /ws/presence for the component's lifetime, reporting `activity` and returning everyone else connected.
 export function usePresence(activity: string) {
   const [users, setUsers] = useState<PresenceUser[]>([]);
   const [connected, setConnected] = useState(false);

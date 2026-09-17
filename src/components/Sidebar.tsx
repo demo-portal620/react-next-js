@@ -21,10 +21,7 @@ interface SidebarProps {
 }
 
 interface MenuItem {
-  // Label key, not display text - resolved via t() at render time so the
-  // sidebar re-renders in the active language rather than being fixed at
-  // module-load time. Also doubles as this item's React/toggle-state
-  // identity below, same as when it held literal English text.
+  // Label key, not display text - resolved via t() at render time so the sidebar re-renders in the active language.
   title: LabelKey;
   icon: React.ReactNode;
   href?: string;
@@ -32,10 +29,7 @@ interface MenuItem {
   requiredPermission?: string;
 }
 
-// Icons layered onto config/menuConfig.ts's data-only tree (title -> icon).
-// The href/requiredPermission data itself lives in menuConfig so that
-// lib/routePermissions.ts (route-level guarding) shares one source of truth
-// with what's shown here instead of duplicating permission strings.
+// Icons layered onto menuConfig's data-only tree - href/requiredPermission live there so route guarding shares one source of truth.
 const ICON_MAP: Partial<Record<LabelKey, React.ReactNode>> = {
   SIDEBAR_DASHBOARD: <BarChart3 className="h-4 w-4" />,
   SIDEBAR_FREELANCERS: <Users className="h-4 w-4" />,
@@ -79,10 +73,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
     return href === pathname;
   };
 
-  // Same idea as th-pgs's sec:authorize on a nav <li> - a plain item needs
-  // its own permission (if any); a group with children is shown only if at
-  // least one child survives filtering (no point showing an empty "User
-  // Management" dropdown to someone with neither VIEW_USER nor MANAGE_ROLE).
+  // A group with children shows only if at least one child survives filtering - no empty dropdowns.
   const visibleMenuItems = menuItems.reduce<MenuItem[]>((acc, item) => {
     if (item.children) {
       const visibleChildren = item.children.filter(

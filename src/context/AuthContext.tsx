@@ -12,13 +12,7 @@ import {
 import { authUtils } from "@/utils/auth";
 import { fetchCurrentUser, User } from "@/services/userApi";
 
-// Single source of truth for "is the user logged in, and what can they do" -
-// replaces three previously separate/inconsistent implementations
-// (useAuth.ts, useRequiredAuth.ts, and ad hoc localStorage reads scattered
-// in Header.tsx/login/page.tsx). Modeled on an earlier scaffold's
-// AuthContext/reducer pattern (heycloud/fe), adapted to this app's token
-// shape and BaseResponse<T> API.
-
+// Single source of truth for "is the user logged in, and what can they do".
 type Status = "loading" | "authenticated" | "unauthenticated";
 
 interface State {
@@ -63,16 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadCurrentUser = useCallback(async () => {
     try {
       const user = await fetchCurrentUser();
-      // accessLogApi.ts reads this same "user" localStorage key to attribute
-      // anonymous pageview tracking to a username - keep writing it here so
-      // that keeps working without that file needing to know about
-      // AuthContext.
+      // accessLogApi.ts reads this same "user" key to attribute anonymous pageview tracking to a username.
       localStorage.setItem("user", JSON.stringify(user));
       dispatch({ type: "AUTHENTICATED", user });
     } catch {
-      // Token existed but is invalid/expired, or /users/me failed -
-      // apiClient's 401 interceptor already clears the token and redirects
-      // when that's the cause; this just makes sure local state agrees.
+      // Token was invalid/expired, or /users/me failed - apiClient's 401 interceptor handles the redirect.
       dispatch({ type: "UNAUTHENTICATED" });
     }
   }, []);
@@ -86,13 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadCurrentUser]);
 
-  // localStorage is shared across every tab on this origin, but each tab's
-  // own currentUser state is only loaded once at mount - without this, a
-  // tab keeps showing whoever was logged in when it loaded while silently
-  // sending requests under the token now in localStorage (apiClient reads
-  // it fresh on every call), since a different login/logout in another tab
-  // overwrote it. The `storage` event only fires in OTHER tabs, not the one
-  // that made the change, so this is exactly the signal needed to re-sync.
+  // Re-syncs this tab's state when another tab logs in/out - the `storage` event only fires in other tabs, not the one that changed it.
   useEffect(() => {
     function handleStorageChange(e: StorageEvent) {
       if (e.key !== "authToken") return;

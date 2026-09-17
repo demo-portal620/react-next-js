@@ -1,10 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 const USERS_BASE = `${API_BASE_URL}/users`;
 
-// Shape returned by the Spring Boot backend's BaseResponse<T> wrapper.
-// text is the already-resolved human-readable string (see
-// com.admin.common.base.exception.Message#getText) - prefer it over the
-// bare code, same convention as apiClient.ts's extractMessage.
+// Shape returned by the Spring Boot backend's BaseResponse<T> wrapper - text is the already-resolved message.
 interface BaseResponse<T> {
   success: boolean;
   data: T;
@@ -79,11 +76,7 @@ export async function fetchCurrentUser(): Promise<User> {
   return body.data;
 }
 
-// Admin-initiated account creation - distinct from the public self-service
-// /auth/register (authApi.ts). ap-be enforces which role the caller is
-// allowed to grant (see UserServiceImpl.canGrantRole); this just surfaces
-// whatever error it returns (e.g. "not authorized" if you try to grant a
-// role above your own).
+// Admin-initiated account creation - ap-be enforces which role the caller may grant (see UserServiceImpl.canGrantRole).
 export async function createUser(payload: {
   username: string;
   password: string;
@@ -105,9 +98,7 @@ export async function createUser(payload: {
   return body.data;
 }
 
-// Not sent with a Content-Type header - the browser sets the correct
-// "multipart/form-data; boundary=..." header itself for a FormData body,
-// same reasoning as stockApi.ts's importProducts.
+// No Content-Type header - the browser sets the correct multipart boundary itself for a FormData body.
 export async function uploadProfilePicture(file: File): Promise<User> {
   const formData = new FormData();
   formData.append("file", file);
@@ -123,10 +114,7 @@ export async function uploadProfilePicture(file: File): Promise<User> {
   return body.data;
 }
 
-// Public endpoint (no auth header needed) - an <img src> can't attach one
-// anyway. ?v= is a required cache-buster, not decoration - the URL is keyed
-// by user id, not by the underlying S3 key, so without it the browser keeps
-// serving cached bytes after a re-upload.
+// Public endpoint - ?v= is a required cache-buster, not decoration, since the URL is keyed by user id, not the S3 key.
 export function profilePictureUrl(userId: string, profilePictureKey?: string): string | null {
   if (!profilePictureKey) return null;
   return `${USERS_BASE}/${userId}/photo?v=${encodeURIComponent(profilePictureKey)}`;
@@ -150,9 +138,7 @@ export async function updateUser(
   return body.data;
 }
 
-// Admin-initiated equivalent of the public "forgot password" flow - sends
-// the target a reset-password email, same as if they'd requested it
-// themselves. The admin never sees/sets the new password directly.
+// Admin-initiated equivalent of "forgot password" - the admin never sees/sets the new password directly.
 export async function resetPasswordForUser(id: string): Promise<void> {
   const res = await fetch(`${USERS_BASE}/${id}/reset-password`, {
     method: "POST",

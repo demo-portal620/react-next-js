@@ -9,11 +9,7 @@ import { Button } from "@/components/ui/button";
 interface ProtectedRouteProps {
   children: ReactNode;
   fallback?: ReactNode;
-  // Looked up per-route from config/menuConfig.ts (see
-  // lib/routePermissions.ts) by the dashboard layout, so this stays in sync
-  // with what the Sidebar nav gates instead of each page checking its own
-  // permission string. Direct URL navigation would otherwise bypass the
-  // Sidebar's hasPermission filtering entirely.
+  // Looked up per-route from menuConfig.ts, so direct URL navigation can't bypass the Sidebar's permission filtering.
   requiredPermission?: string;
 }
 

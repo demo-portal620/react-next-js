@@ -70,11 +70,7 @@ export async function deleteProduct(id: string): Promise<void> {
   return apiDelete<void>(`${PRODUCTS_BASE}/${id}`);
 }
 
-// Not routed through apiPost - axios's instance-level default
-// Content-Type: application/json header can otherwise fight its automatic
-// multipart boundary detection for a FormData body. Explicitly unsetting
-// it for just this call lets the browser set the correct
-// "multipart/form-data; boundary=..." header itself.
+// Not routed through apiPost - explicitly unsets Content-Type so the browser sets the correct multipart boundary itself.
 export async function importProducts(file: File): Promise<ProductImportResult> {
   const formData = new FormData();
   formData.append("file", file);

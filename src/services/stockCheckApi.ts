@@ -14,9 +14,7 @@ export interface StockCheckTask {
   approvedDate?: string;
   submittedLatitude?: number;
   submittedLongitude?: number;
-  // null (not just false) means "not enough information to judge" - no
-  // location captured on the worker's device, or no work site configured
-  // yet. Only ever true/false once both exist.
+  // null means "not enough information to judge" - only ever true/false once location and a work site both exist.
   offSite?: boolean | null;
   createdBy?: string;
   createdDate?: string;

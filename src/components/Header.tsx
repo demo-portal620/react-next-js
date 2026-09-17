@@ -35,10 +35,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const { t, i18n } = useTranslation();
   const [currentTime, setCurrentTime] = useState("");
 
-  // This used to be its own useState("en") never connected to i18next at
-  // all - the dropdown changed, nothing else did. i18n.language is now the
-  // actual source of truth, and switching it persists so a reload keeps the
-  // choice (see config/i18n.ts's getInitialLanguage).
+  // i18n.language is the source of truth; persisting it means a reload keeps the choice.
   function handleLanguageChange(lang: string) {
     i18n.changeLanguage(lang);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
@@ -109,10 +106,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="flex items-center">
-                {/* Hidden below sm, same as the clock above - a long display
-                    name here had no truncation or wrap and could overflow
-                    the header row on a narrow screen. Still fully visible
-                    once the dropdown opens (DropdownMenuLabel shows it). */}
+                {/* Hidden below sm to avoid overflow on a narrow screen; still visible once the dropdown opens. */}
                 <span className="hidden sm:inline uppercase font-bold mr-2 max-w-32 truncate">
                   {displayName || t("NAVBAR_ACCOUNT_FALLBACK")}
                 </span>

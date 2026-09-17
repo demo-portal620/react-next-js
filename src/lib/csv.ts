@@ -1,15 +1,4 @@
-// Plain CSV export - deliberately not Excel. See heycloud/be's tt-actif2-back
-// base-excel module for what a "proper" Excel export looked like a few years
-// back (raw Apache POI, ~2,300 lines of manual cell-by-cell writes, branching
-// on HSSFSheet vs XSSFSheet to support the old binary .xls format): that
-// complexity doesn't buy anything here - CSV opens in Excel/Sheets/Numbers
-// just fine, needs zero dependencies, and needs no backend endpoint at all
-// since the data's already sitting in the browser as JSON once a table has
-// loaded. Reach for a real Excel library (e.g. exceljs on the frontend, or
-// EasyExcel/FastExcel on the backend, not raw POI) only if a page later
-// needs actual spreadsheet features - multiple sheets, cell formatting,
-// formulas - that CSV genuinely can't represent.
-
+// Plain CSV export, deliberately not Excel - opens fine in any spreadsheet app, zero dependencies, no backend endpoint needed.
 export type CsvCell = string | number | boolean | null | undefined;
 
 function escapeCsvCell(value: CsvCell): string {
@@ -28,9 +17,7 @@ export function toCsv(headers: string[], rows: CsvCell[][]): string {
   return lines.join("\r\n");
 }
 
-// "﻿" (UTF-8 BOM) makes Excel on Windows detect UTF-8 instead of
-// guessing the system codepage and mangling non-ASCII text (e.g. the
-// Chinese labels the app now has) - browsers ignore it silently either way.
+// UTF-8 BOM makes Excel on Windows detect UTF-8 instead of mangling non-ASCII text; browsers ignore it silently.
 export function downloadCsv(filename: string, headers: string[], rows: CsvCell[][]): void {
   const csv = "﻿" + toCsv(headers, rows);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

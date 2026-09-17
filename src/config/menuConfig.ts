@@ -1,24 +1,15 @@
 import { LabelKey } from "@/locales/en/labels";
 
-// Data-only mirror of the sidebar nav tree (Sidebar.tsx merges icons back in
-// via ICON_MAP). Kept separate from Sidebar so route guarding
-// (lib/routePermissions.ts) can consume the same href -> requiredPermission
-// mapping without importing a "use client" component full of JSX icons.
+// Data-only mirror of the sidebar nav tree - lets route guarding reuse the same href -> requiredPermission mapping without importing JSX icons.
 export interface MenuItemConfig {
   title: LabelKey;
   href?: string;
   children?: MenuItemConfig[];
-  // Mirrors th-pgs's Thymeleaf sec:authorize="hasAuthority('X')" - omit for
-  // "visible to anyone logged in" (e.g. Dashboard, Freelancers - the
-  // latter's backend endpoint is public too, so gating just the nav link
-  // would be inconsistent with what's actually callable).
+  // Omit for "visible to anyone logged in" (e.g. Dashboard, Freelancers - the latter's backend endpoint is public too).
   requiredPermission?: string;
 }
 
-// Trimmed down to what's actually built for now. The rest of the modules
-// below (Sub Accounts, Bank/Credit/Order Management) are unused placeholders
-// with no real pages behind them yet - kept commented out so they're easy to
-// bring back once they're implemented.
+// Unbuilt modules below (Sub Accounts, Bank/Credit/Order Management) are kept commented out for later.
 export const menuConfig: MenuItemConfig[] = [
   {
     title: "SIDEBAR_DASHBOARD",
@@ -38,9 +29,7 @@ export const menuConfig: MenuItemConfig[] = [
     requiredPermission: "VIEW_PRESENCE",
   },
   {
-    // Ungated - anyone can raise a complaint, same as Dashboard/Freelancers
-    // above. Whether the "Inbox" section within the page itself shows up
-    // is a further, separate MANAGE_COMPLAINTS check inside complaints/page.tsx.
+    // Ungated - anyone can raise a complaint; the "Inbox" section is separately gated inside complaints/page.tsx.
     title: "SIDEBAR_COMPLAINTS",
     href: "/complaints",
   },
@@ -55,8 +44,7 @@ export const menuConfig: MenuItemConfig[] = [
     requiredPermission: "MANAGE_STOCK",
   },
   {
-    // MANAGE_SECURITY is SUPERADMIN-only (see V21 migration) - this item
-    // naturally only shows for that role, no extra check needed here.
+    // MANAGE_SECURITY is SUPERADMIN-only - this item naturally only shows for that role.
     title: "SIDEBAR_IP_WHITELIST",
     href: "/ip-whitelist",
     requiredPermission: "MANAGE_SECURITY",

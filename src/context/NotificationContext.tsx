@@ -34,12 +34,7 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 
 const RECENT_LIMIT = 20;
 
-/**
- * App-wide, unlike usePresence.ts's per-page pattern - mounted once in
- * AdminLayout.tsx so the /ws/notifications connection (and the unread
- * count/recent list it feeds) survives navigation between dashboard pages
- * instead of reconnecting on every route change.
- */
+// App-wide, unlike usePresence.ts's per-page pattern - mounted once in AdminLayout so the connection survives navigation.
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);

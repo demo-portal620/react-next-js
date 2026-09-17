@@ -10,11 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-// Generic modal wrapper - title/show/onClose/onSave contract, ported from
-// an earlier scaffold's HeyDialog. Deliberately dropped its hand-rolled
-// drag/resize logic (not needed here - a fixed-size modal covers every
-// current use case) and kept just the header/body/footer/save/cancel
-// convention.
+// Generic modal wrapper - title/show/onClose/onSave contract, fixed-size (no drag/resize, not needed here).
 interface AppDialogProps {
   title?: ReactNode;
   show: boolean;
@@ -52,12 +48,7 @@ export default function AppDialog({
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        // DialogContent's own class already caps width at
-        // calc(100%-2rem) so it can never overflow a narrow viewport -
-        // an inline maxWidth here would override that (inline style always
-        // beats a class), so callers requesting a fixed width (e.g. 480px)
-        // still get clamped down on a phone screen via min(), not just cut
-        // off past the edge.
+        // min() keeps a fixed width (e.g. 480px) clamped on a narrow viewport instead of overriding DialogContent's own cap.
         style={{ width, maxWidth: width ? `min(${width}, calc(100% - 2rem))` : undefined, height }}
         className="flex max-h-[90vh] flex-col"
       >

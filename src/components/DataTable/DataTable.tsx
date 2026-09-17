@@ -8,26 +8,14 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { downloadCsv, CsvCell } from "@/lib/csv";
 
-// Generic paginated table - replaces the ~150 lines of table/pagination
-// markup that was copy-pasted per feature page (roles, freelancers, users,
-// apk-versions all had their own near-identical copy). Column-def + rows
-// contract inspired by an earlier scaffold's BasicTable, built fresh here
-// rather than ported - that one carried session-persisted filters/column
-// visibility this app doesn't need yet. Search/filter UI is deliberately
-// NOT part of this component (it varies too much per page); this only
-// owns the table body and the pagination footer.
+// Generic paginated table - replaces the near-identical table/pagination markup each feature page used to copy-paste. Search/filter UI is deliberately not part of this component; it only owns the table body and pagination footer.
 export interface DataTableColumn<T> {
   key: string;
   header: string;
   render?: (row: T) => ReactNode;
   className?: string;
   headerClassName?: string;
-  /**
-   * Value used for this column in CSV export - needed whenever render()
-   * produces JSX (badges, buttons, a joined list) rather than a plain
-   * string, since that JSX has no sensible CSV representation. Defaults to
-   * the raw row[key] if omitted.
-   */
+  /** CSV export value - needed when render() produces JSX with no plain-string representation. Defaults to row[key]. */
   csvValue?: (row: T) => CsvCell;
 }
 
@@ -66,13 +54,7 @@ export default function DataTable<T>({
   const totalPages = Math.max(Math.ceil(total / pageSize), 1);
   const colSpan = columns.length + (actions ? 1 : 0);
 
-  // Exports exactly the rows currently loaded into this table, not every
-  // page - a real "export everything matching the filter" would need
-  // either a dedicated backend endpoint or fetching every page client-side,
-  // which is a bigger feature than this basic pass. When pageSize already
-  // covers the full result set (e.g. presence's page), that distinction is
-  // moot; when it doesn't (e.g. roles' page of 10), the button label below
-  // is explicit about the scope so it isn't mistaken for a full export.
+  // Exports only the rows currently loaded, not every page matching the filter - the button label below is explicit about that scope.
   function handleExport() {
     if (!exportFileName) return;
     const headers = columns.map((col) => col.header);

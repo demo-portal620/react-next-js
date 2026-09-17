@@ -18,10 +18,7 @@ export default function AdminLayout({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // One-directional on purpose: forces collapsed when the viewport shrinks
-  // below the breakpoint, but doesn't force it back open when growing past
-  // it again, so a user's own manual toggle at desktop width isn't fought
-  // by an unrelated resize event.
+  // One-directional - forces collapsed below the breakpoint, but never forces it back open, so manual toggles aren't fought.
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth < MOBILE_BREAKPOINT) {
@@ -43,11 +40,7 @@ export default function AdminLayout({
 
           <div
             className={cn(
-              // pb-16 clears the fixed footer's height - without it, any
-              // page whose content reaches near the bottom of the viewport
-              // (e.g. a table's pagination controls) renders underneath the
-              // footer instead of above it, since `fixed` content takes no
-              // space in normal flow.
+              // pb-16 clears the fixed footer's height, since `fixed` content takes no space in normal flow.
               "content-wrapper pt-14 pb-16 transition-all duration-300",
               sidebarCollapsed ? "ml-16" : "ml-64"
             )}

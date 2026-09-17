@@ -1,10 +1,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 const AUTH_BASE = `${API_BASE}/auth`;
 
-// Mirrors ap-be's BaseResponse<T> JSON shape (com.admin.common.base.BaseResponse).
-// Message.text is the already-resolved human-readable string (see
-// com.admin.common.base.exception.Message#getText) - prefer it over the
-// bare code, same convention as apiClient.ts's extractMessage.
+// Mirrors ap-be's BaseResponse<T> JSON shape - Message.text is the already-resolved human-readable string.
 interface BaseResponse<T> {
   success: boolean;
   data: T;
@@ -12,9 +9,7 @@ interface BaseResponse<T> {
   statusCode: number;
 }
 
-// Mirrors ap-be's com.admin.dto.auth.LoginResponseDto field-for-field.
-// token is null when requiresTotp is true - the caller must POST
-// pendingToken + a 6-digit code to /auth/login/verify-totp to get a real one.
+// Mirrors ap-be's LoginResponseDto - token is null when requiresTotp is true, pending a verify-totp call.
 export interface LoginResponseDto {
   token: string | null;
   requiresTotp: boolean;
@@ -26,9 +21,6 @@ function firstMessage(body: BaseResponse<unknown> | null, fallback: string): str
   return first?.text || first?.code || fallback;
 }
 
-// Login function - ap-be's AuthController#login now returns
-// BaseResponse<LoginResponseDto> like every other endpoint (it used to
-// return a bare {"token": "..."} object).
 export async function loginUser(username: string, password: string): Promise<LoginResponseDto> {
   const url = `${AUTH_BASE}/login`;
 
@@ -52,9 +44,7 @@ export async function loginUser(username: string, password: string): Promise<Log
   return body.data;
 }
 
-// Second step of login when loginUser() returns requiresTotp: true -
-// submits the code shown on the user's authenticator (ap-android's
-// Authenticator screen) alongside the pendingToken from step one.
+// Second login step when loginUser() returns requiresTotp: true.
 export async function verifyLoginTotp(pendingToken: string, code: string): Promise<LoginResponseDto> {
   const url = `${AUTH_BASE}/login/verify-totp`;
 
@@ -84,10 +74,6 @@ export interface RegisterPayload {
   phoneNumber?: string;
 }
 
-// Register function - ap-be's AuthController#register now returns
-// BaseResponse<Void> like every other endpoint (it used to return a bare
-// plain-text body, which is why this used to read res.text() instead of
-// res.json()).
 export async function registerUser(payload: RegisterPayload): Promise<void> {
   const url = `${AUTH_BASE}/register`;
 
@@ -106,9 +92,7 @@ export async function registerUser(payload: RegisterPayload): Promise<void> {
   }
 }
 
-// ap-be's AuthController#forgotPassword always responds success whether or
-// not the email matches an account (anti-enumeration) - a thrown Error here
-// means the request itself failed (network/validation), not "email not found".
+// Always responds success regardless of match (anti-enumeration) - a thrown Error means the request itself failed.
 export async function requestPasswordReset(email: string): Promise<void> {
   const url = `${AUTH_BASE}/forgot-password`;
 
@@ -163,9 +147,7 @@ export async function verifyEmail(token: string): Promise<void> {
   }
 }
 
-// ap-be's AuthController#resendVerification always responds success whether
-// or not the email matches an unverified account (anti-enumeration) - a
-// thrown Error here means the request itself failed, not "email not found".
+// Always responds success regardless of match (anti-enumeration).
 export async function resendVerification(email: string): Promise<void> {
   const url = `${AUTH_BASE}/resend-verification`;
 
