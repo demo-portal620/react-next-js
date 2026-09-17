@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Complaint,
   ComplaintComment,
@@ -23,11 +24,24 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function ComplaintDetailPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
   const { hasPermission } = useAuth();
   const canManage = hasPermission("MANAGE_COMPLAINTS");
+
+  const statusLabels: Record<string, string> = {
+    OPEN: t("COMPLAINTS_STATUS_OPEN"),
+    RESOLVED: t("COMPLAINTS_STATUS_RESOLVED"),
+  };
+  const categoryLabels: Record<string, string> = {
+    PAY: t("COMPLAINTS_CATEGORY_PAY"),
+    SAFETY: t("COMPLAINTS_CATEGORY_SAFETY"),
+    EQUIPMENT: t("COMPLAINTS_CATEGORY_EQUIPMENT"),
+    MANAGEMENT: t("COMPLAINTS_CATEGORY_MANAGEMENT"),
+    OTHER: t("COMPLAINTS_CATEGORY_OTHER"),
+  };
 
   const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [comments, setComments] = useState<ComplaintComment[]>([]);
@@ -47,7 +61,7 @@ export default function ComplaintDetailPage() {
         setComplaint(data.complaint);
         setComments(data.comments);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load complaint"))
+      .catch((err) => setError(err instanceof Error ? err.message : t("COMPLAINT_DETAIL_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -64,7 +78,7 @@ export default function ComplaintDetailPage() {
       setReply("");
       load();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to post reply");
+      setActionError(err instanceof Error ? err.message : t("COMPLAINT_DETAIL_REPLY_ERROR"));
     } finally {
       setPosting(false);
     }
@@ -77,14 +91,14 @@ export default function ComplaintDetailPage() {
       await resolveComplaint(id);
       load();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to resolve complaint");
+      setActionError(err instanceof Error ? err.message : t("COMPLAINT_DETAIL_RESOLVE_ERROR"));
     } finally {
       setResolving(false);
     }
   }
 
   if (loading) {
-    return <div className="p-6 max-w-3xl mx-auto text-muted-foreground">Loading...</div>;
+    return <div className="p-6 max-w-3xl mx-auto text-muted-foreground">{t("COMMON_LOADING")}</div>;
   }
 
   if (error || !complaint) {
@@ -92,11 +106,11 @@ export default function ComplaintDetailPage() {
       <div className="p-6 max-w-3xl mx-auto space-y-4">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error || "Complaint not found"}</AlertDescription>
+          <AlertDescription>{error || t("COMPLAINT_DETAIL_NOT_FOUND")}</AlertDescription>
         </Alert>
         <Button variant="outline" onClick={() => router.push("/complaints")}>
           <ArrowLeft className="h-4 w-4" />
-          Back to Complaints
+          {t("COMPLAINT_DETAIL_BACK")}
         </Button>
       </div>
     );
@@ -108,14 +122,14 @@ export default function ComplaintDetailPage() {
     <div className="p-6 max-w-3xl mx-auto space-y-4">
       <Button variant="ghost" size="sm" onClick={() => router.push("/complaints")}>
         <ArrowLeft className="h-4 w-4" />
-        Back to Complaints
+        {t("COMPLAINT_DETAIL_BACK")}
       </Button>
 
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>
             <CardTitle className="text-xl">{complaint.subject}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">{complaint.category}</p>
+            <p className="text-sm text-muted-foreground mt-1">{categoryLabels[complaint.category] ?? complaint.category}</p>
           </div>
           <span
             className={cn(
@@ -123,7 +137,7 @@ export default function ComplaintDetailPage() {
               statusStyle[complaint.status] ?? statusStyle.OPEN
             )}
           >
-            {complaint.status}
+            {statusLabels[complaint.status] ?? complaint.status}
           </span>
         </CardHeader>
         <CardContent>
@@ -139,9 +153,9 @@ export default function ComplaintDetailPage() {
       )}
 
       <div className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Replies</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">{t("COMPLAINT_DETAIL_REPLIES")}</h2>
         {comments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No replies yet.</p>
+          <p className="text-sm text-muted-foreground">{t("COMPLAINT_DETAIL_NO_REPLIES")}</p>
         ) : (
           comments.map((c) => (
             <Card key={c.id} className="bg-muted/30">
@@ -162,17 +176,17 @@ export default function ComplaintDetailPage() {
         <Textarea
           value={reply}
           onChange={(e) => setReply(e.target.value)}
-          placeholder="Write a reply..."
+          placeholder={t("COMPLAINT_DETAIL_REPLY_PLACEHOLDER")}
           rows={3}
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button onClick={handleReply} disabled={posting || !reply.trim()}>
-            {posting ? "Posting..." : "Post Reply"}
+            {posting ? t("COMPLAINT_DETAIL_POSTING") : t("COMPLAINT_DETAIL_POST_REPLY")}
           </Button>
           {canResolve && (
             <Button variant="outline" onClick={handleResolve} disabled={resolving}>
               <CheckCircle2 className="h-4 w-4" />
-              {resolving ? "Resolving..." : "Resolve"}
+              {resolving ? t("COMPLAINT_DETAIL_RESOLVING") : t("COMPLAINT_DETAIL_RESOLVE")}
             </Button>
           )}
         </div>

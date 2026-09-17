@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { createUser } from "@/services/userApi";
 import { fetchRoles, Role } from "@/services/roleApi";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +35,7 @@ function grantableRoleNames(isSuperAdmin: boolean): string[] {
 }
 
 export default function NewUserPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { currentUser } = useAuth();
   const isSuperAdmin = currentUser?.roles?.some((r) => r.name === "SUPERADMIN") ?? false;
@@ -63,7 +65,7 @@ export default function NewUserPage() {
     e.preventDefault();
     setError("");
     if (!form.username || !form.password || !form.email || !form.roleId) {
-      setError("Username, password, email and role are required.");
+      setError(t("USER_NEW_ERROR_REQUIRED"));
       return;
     }
     setSaving(true);
@@ -79,7 +81,7 @@ export default function NewUserPage() {
       });
       router.push("/users");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create account");
+      setError(err instanceof Error ? err.message : t("USER_NEW_ERROR_GENERIC"));
     } finally {
       setSaving(false);
     }
@@ -89,15 +91,14 @@ export default function NewUserPage() {
     <div className="p-6 max-w-xl mx-auto space-y-4">
       <Button variant="ghost" size="sm" onClick={() => router.push("/users")}>
         <ArrowLeft className="h-4 w-4" />
-        Back to Users
+        {t("USER_NEW_BACK")}
       </Button>
 
       <Card>
         <CardHeader>
-          <CardTitle>Add User</CardTitle>
+          <CardTitle>{t("USER_NEW_TITLE")}</CardTitle>
           <CardDescription>
-            Creates an account with a role already assigned - unlike public self-registration,
-            which starts with no access at all.
+            {t("USER_NEW_DESC")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -110,7 +111,7 @@ export default function NewUserPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="new-username">Username</Label>
+              <Label htmlFor="new-username">{t("USER_NEW_USERNAME")}</Label>
               <Input
                 id="new-username"
                 value={form.username}
@@ -119,7 +120,7 @@ export default function NewUserPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="new-password">Password</Label>
+              <Label htmlFor="new-password">{t("USER_NEW_PASSWORD")}</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -129,7 +130,7 @@ export default function NewUserPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="new-email">Email</Label>
+              <Label htmlFor="new-email">{t("USER_NEW_EMAIL")}</Label>
               <Input
                 id="new-email"
                 type="email"
@@ -140,7 +141,7 @@ export default function NewUserPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="new-firstname">First name</Label>
+                <Label htmlFor="new-firstname">{t("USER_NEW_FIRSTNAME")}</Label>
                 <Input
                   id="new-firstname"
                   value={form.firstname}
@@ -148,7 +149,7 @@ export default function NewUserPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="new-lastname">Last name</Label>
+                <Label htmlFor="new-lastname">{t("USER_NEW_LASTNAME")}</Label>
                 <Input
                   id="new-lastname"
                   value={form.lastname}
@@ -158,7 +159,7 @@ export default function NewUserPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="new-phone">Phone</Label>
+              <Label htmlFor="new-phone">{t("USER_NEW_PHONE")}</Label>
               <Input
                 id="new-phone"
                 value={form.phoneNumber}
@@ -167,13 +168,13 @@ export default function NewUserPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Role</Label>
+              <Label>{t("USER_NEW_ROLE")}</Label>
               <Select
                 value={form.roleId}
                 onValueChange={(value) => setForm((f) => ({ ...f, roleId: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a role" />
+                  <SelectValue placeholder={t("USER_NEW_ROLE_PLACEHOLDER")} />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((r) => (
@@ -186,7 +187,7 @@ export default function NewUserPage() {
             </div>
 
             <Button type="submit" disabled={saving}>
-              {saving ? "Creating..." : "Create Account"}
+              {saving ? t("USER_NEW_SUBMIT_LOADING") : t("USER_NEW_SUBMIT")}
             </Button>
           </form>
         </CardContent>

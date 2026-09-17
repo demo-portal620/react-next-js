@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import {
   ArrowUpRight,
   Users,
@@ -32,6 +33,7 @@ interface StatTile {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const { users: onlineUsers } = usePresence("Dashboard");
 
@@ -74,7 +76,7 @@ export default function Dashboard() {
   const stats: StatTile[] = [
     {
       key: "freelancers",
-      title: "Total Freelancers",
+      title: t("DASHBOARD_STAT_FREELANCERS"),
       value: freelancerTotal === null ? "—" : String(freelancerTotal),
       icon: Users,
       bgColor: "bg-blue-500",
@@ -85,7 +87,7 @@ export default function Dashboard() {
       ? [
           {
             key: "complaints",
-            title: "Open Complaints",
+            title: t("DASHBOARD_STAT_COMPLAINTS"),
             value: openComplaints === null ? "—" : String(openComplaints),
             icon: MessageSquareWarning,
             bgColor: "bg-red-500",
@@ -98,7 +100,7 @@ export default function Dashboard() {
       ? [
           {
             key: "inventory",
-            title: "Inventory Items",
+            title: t("DASHBOARD_STAT_INVENTORY"),
             value: inventoryTotal === null ? "—" : String(inventoryTotal),
             icon: Package,
             bgColor: "bg-green-500",
@@ -111,7 +113,7 @@ export default function Dashboard() {
       ? [
           {
             key: "users",
-            title: "Total Users",
+            title: t("DASHBOARD_STAT_USERS"),
             value: userTotal === null ? "—" : String(userTotal),
             icon: UserCog,
             bgColor: "bg-purple-500",
@@ -124,7 +126,7 @@ export default function Dashboard() {
       ? [
           {
             key: "presence",
-            title: "Online Now",
+            title: t("DASHBOARD_STAT_PRESENCE"),
             value: String(onlineUsers.length),
             icon: Radio,
             bgColor: "bg-teal-500",
@@ -135,7 +137,7 @@ export default function Dashboard() {
       : []),
     {
       key: "apk",
-      title: "APK Versions",
+      title: t("DASHBOARD_STAT_APK"),
       value: apkVersionTotal === null ? "—" : String(apkVersionTotal),
       icon: Smartphone,
       bgColor: "bg-yellow-500",
@@ -150,17 +152,17 @@ export default function Dashboard() {
       <div className="content-header mb-6">
         <div className="container-fluid">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("DASHBOARD_TITLE")}</h1>
           </div>
           <nav className="flex" aria-label="Breadcrumb">
             <ol className="inline-flex items-center space-x-1 md:space-x-3">
               <li className="inline-flex items-center">
-                <span className="text-gray-700">Home</span>
+                <span className="text-gray-700">{t("DASHBOARD_BREADCRUMB_HOME")}</span>
               </li>
               <li>
                 <div className="flex items-center">
                   <span className="mx-2 text-gray-400">/</span>
-                  <span className="text-gray-500">Dashboard</span>
+                  <span className="text-gray-500">{t("DASHBOARD_TITLE")}</span>
                 </div>
               </li>
             </ol>
@@ -195,7 +197,7 @@ export default function Dashboard() {
                     href={stat.link}
                     className="small-box-footer bg-black bg-opacity-20 px-4 py-2 flex items-center justify-between text-sm hover:bg-opacity-30 transition-all"
                   >
-                    More info <ArrowUpRight className="h-4 w-4" />
+                    {t("DASHBOARD_MORE_INFO")} <ArrowUpRight className="h-4 w-4" />
                   </Link>
                 </div>
               );

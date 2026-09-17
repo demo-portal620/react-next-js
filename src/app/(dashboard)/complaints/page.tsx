@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Complaint,
   createComplaint,
@@ -26,13 +27,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const CATEGORY_OPTIONS = [
-  { value: "PAY", label: "Pay" },
-  { value: "SAFETY", label: "Safety" },
-  { value: "EQUIPMENT", label: "Equipment" },
-  { value: "MANAGEMENT", label: "Management" },
-  { value: "OTHER", label: "Other" },
-];
+const CATEGORY_VALUES = ["PAY", "SAFETY", "EQUIPMENT", "MANAGEMENT", "OTHER"] as const;
 
 const statusStyle: Record<string, string> = {
   OPEN: "bg-amber-100 text-amber-700",
@@ -40,8 +35,21 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function ComplaintsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { hasPermission } = useAuth();
+
+  const categoryLabels: Record<string, string> = {
+    PAY: t("COMPLAINTS_CATEGORY_PAY"),
+    SAFETY: t("COMPLAINTS_CATEGORY_SAFETY"),
+    EQUIPMENT: t("COMPLAINTS_CATEGORY_EQUIPMENT"),
+    MANAGEMENT: t("COMPLAINTS_CATEGORY_MANAGEMENT"),
+    OTHER: t("COMPLAINTS_CATEGORY_OTHER"),
+  };
+  const statusLabels: Record<string, string> = {
+    OPEN: t("COMPLAINTS_STATUS_OPEN"),
+    RESOLVED: t("COMPLAINTS_STATUS_RESOLVED"),
+  };
   const canManage = hasPermission("MANAGE_COMPLAINTS");
 
   const [myComplaints, setMyComplaints] = useState<Complaint[]>([]);
@@ -99,11 +107,11 @@ export default function ComplaintsPage() {
   async function handleCreate() {
     setFormError("");
     if (!category) {
-      setFormError("Choose a category.");
+      setFormError(t("COMPLAINTS_ERROR_CATEGORY_REQUIRED"));
       return;
     }
     if (!subject.trim() || !message.trim()) {
-      setFormError("Subject and message are required.");
+      setFormError(t("COMPLAINTS_ERROR_FIELDS_REQUIRED"));
       return;
     }
     setSaving(true);
@@ -112,7 +120,7 @@ export default function ComplaintsPage() {
       setShowCreateDialog(false);
       loadMine();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to submit complaint");
+      setFormError(err instanceof Error ? err.message : t("COMPLAINTS_ERROR_SUBMIT_FAILED"));
     } finally {
       setSaving(false);
     }
@@ -121,18 +129,20 @@ export default function ComplaintsPage() {
   const columns: DataTableColumn<Complaint>[] = [
     {
       key: "subject",
-      header: "Subject",
+      header: t("COMPLAINTS_COL_SUBJECT"),
       className: "px-4 py-3 font-medium",
       render: (c) => c.subject,
     },
     {
       key: "category",
-      header: "Category",
-      render: (c) => <span className="text-muted-foreground text-sm">{c.category}</span>,
+      header: t("COMPLAINTS_COL_CATEGORY"),
+      render: (c) => (
+        <span className="text-muted-foreground text-sm">{categoryLabels[c.category] ?? c.category}</span>
+      ),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("COMPLAINTS_COL_STATUS"),
       render: (c) => (
         <span
           className={cn(
@@ -140,13 +150,13 @@ export default function ComplaintsPage() {
             statusStyle[c.status] ?? statusStyle.OPEN
           )}
         >
-          {c.status}
+          {statusLabels[c.status] ?? c.status}
         </span>
       ),
     },
     {
       key: "createdDate",
-      header: "Created",
+      header: t("COMPLAINTS_COL_CREATED"),
       className: "px-4 py-3 text-muted-foreground",
       render: (c) => (c.createdDate ? new Date(c.createdDate).toLocaleString() : "-"),
     },
@@ -156,25 +166,25 @@ export default function ComplaintsPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Complaints</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("COMPLAINTS_TITLE")}</h1>
           <p className="text-sm text-muted-foreground">
-            Raise a question or complaint - it routes to your admin automatically.
+            {t("COMPLAINTS_SUBTITLE")}
           </p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Raise a Complaint
+          {t("COMPLAINTS_RAISE")}
         </Button>
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-lg font-medium">My Complaints</h2>
+        <h2 className="text-lg font-medium">{t("COMPLAINTS_MINE_TITLE")}</h2>
         <DataTable
           columns={columns}
           rows={myComplaints}
           getRowKey={(c) => c.id}
           loading={myLoading}
-          emptyMessage="You haven't raised any complaints."
+          emptyMessage={t("COMPLAINTS_EMPTY_MINE")}
           itemLabel="complaint"
           page={1}
           pageSize={myComplaints.length || 1}
@@ -182,7 +192,7 @@ export default function ComplaintsPage() {
           onPageChange={() => {}}
           actions={(c) => (
             <Button variant="ghost" size="sm" onClick={() => router.push(`/complaints/${c.id}`)}>
-              View
+              {t("COMMON_VIEW")}
             </Button>
           )}
         />
@@ -190,13 +200,13 @@ export default function ComplaintsPage() {
 
       {canManage && (
         <div className="space-y-2">
-          <h2 className="text-lg font-medium">Inbox</h2>
+          <h2 className="text-lg font-medium">{t("COMPLAINTS_INBOX_TITLE")}</h2>
           <DataTable
             columns={columns}
             rows={inboxComplaints}
             getRowKey={(c) => c.id}
             loading={inboxLoading}
-            emptyMessage="No complaints routed to you."
+            emptyMessage={t("COMPLAINTS_EMPTY_INBOX")}
             itemLabel="complaint"
             page={inboxPage}
             pageSize={inboxPageSize}
@@ -204,7 +214,7 @@ export default function ComplaintsPage() {
             onPageChange={setInboxPage}
             actions={(c) => (
               <Button variant="ghost" size="sm" onClick={() => router.push(`/complaints/${c.id}`)}>
-                View
+                {t("COMMON_VIEW")}
               </Button>
             )}
           />
@@ -212,11 +222,11 @@ export default function ComplaintsPage() {
       )}
 
       <AppDialog
-        title="Raise a complaint"
+        title={t("COMPLAINTS_DIALOG_TITLE")}
         show={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
         onSave={handleCreate}
-        saveLabel={saving ? "Submitting..." : "Submit"}
+        saveLabel={saving ? t("COMPLAINTS_SUBMIT_LOADING") : t("COMPLAINTS_SUBMIT")}
         width="480px"
       >
         <div className="space-y-3">
@@ -227,37 +237,37 @@ export default function ComplaintsPage() {
             </Alert>
           )}
           <div className="space-y-1.5">
-            <Label>Category</Label>
+            <Label>{t("COMPLAINTS_CATEGORY_LABEL")}</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose a category" />
+                <SelectValue placeholder={t("COMPLAINTS_CATEGORY_PLACEHOLDER")} />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
+                {CATEGORY_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {categoryLabels[value]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="complaint-subject">Subject</Label>
+            <Label htmlFor="complaint-subject">{t("COMPLAINTS_SUBJECT_LABEL")}</Label>
             <Input
               id="complaint-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g. Broken forklift on floor 2"
+              placeholder={t("COMPLAINTS_SUBJECT_PLACEHOLDER")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="complaint-message">Message</Label>
+            <Label htmlFor="complaint-message">{t("COMPLAINTS_MESSAGE_LABEL")}</Label>
             <Textarea
               id="complaint-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              placeholder="Describe the issue..."
+              placeholder={t("COMPLAINTS_MESSAGE_PLACEHOLDER")}
             />
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { fetchUsers, User } from "@/services/userApi";
 import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Eye, Plus, Search } from "lucide-react";
 
 export default function UserListPage() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,7 +37,7 @@ export default function UserListPage() {
         setUsers(data.users);
         setTotalCount(data.total);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load users"))
+      .catch((err) => setError(err instanceof Error ? err.message : t("USERS_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [page, pageSize, search]);
 
@@ -50,24 +52,24 @@ export default function UserListPage() {
   }
 
   const columns: DataTableColumn<User>[] = [
-    { key: "username", header: "Username", className: "px-4 py-3 font-medium" },
+    { key: "username", header: t("USERS_COL_USERNAME"), className: "px-4 py-3 font-medium" },
     {
       key: "name",
-      header: "Name",
+      header: t("USERS_COL_NAME"),
       className: "px-4 py-3 text-muted-foreground",
       csvValue: (user) => [user.firstname, user.lastname].filter(Boolean).join(" "),
       render: (user) => [user.firstname, user.lastname].filter(Boolean).join(" ") || "-",
     },
-    { key: "email", header: "Email", className: "px-4 py-3 text-muted-foreground" },
+    { key: "email", header: t("USERS_COL_EMAIL"), className: "px-4 py-3 text-muted-foreground" },
     {
       key: "phoneNumber",
-      header: "Phone",
+      header: t("USERS_COL_PHONE"),
       className: "px-4 py-3 text-muted-foreground",
       render: (user) => user.phoneNumber || "-",
     },
     {
       key: "roles",
-      header: "Roles",
+      header: t("USERS_COL_ROLES"),
       csvValue: (user) => (user.roles || []).map((r) => r.name).join("; "),
       render: (user) => (
         <div className="flex flex-wrap gap-1">
@@ -92,35 +94,35 @@ export default function UserListPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("USERS_TITLE")}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage user accounts, role assignment, and contact details.
+            {t("USERS_SUBTITLE")}
           </p>
         </div>
         <Button onClick={() => router.push("/users/new")}>
           <Plus className="h-4 w-4" />
-          Add User
+          {t("USERS_ADD")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Search</CardTitle>
-          <CardDescription>Search by username, name, or email</CardDescription>
+          <CardTitle className="text-base">{t("COMMON_SEARCH")}</CardTitle>
+          <CardDescription>{t("USERS_SEARCH_DESC")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by username, name, or email..."
+                placeholder={t("USERS_SEARCH_PLACEHOLDER")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Button type="submit" variant="secondary">
-              Search
+              {t("COMMON_SEARCH")}
             </Button>
           </form>
         </CardContent>
@@ -138,7 +140,7 @@ export default function UserListPage() {
         rows={users}
         getRowKey={(user) => user.id}
         loading={loading}
-        emptyMessage="No users found."
+        emptyMessage={t("USERS_EMPTY")}
         itemLabel="user"
         exportFileName="users"
         page={page}
@@ -151,7 +153,7 @@ export default function UserListPage() {
             size="icon"
             className="h-8 w-8"
             onClick={() => router.push(`/users/${user.id}`)}
-            title="View"
+            title={t("COMMON_VIEW")}
           >
             <Eye className="h-4 w-4" />
           </Button>

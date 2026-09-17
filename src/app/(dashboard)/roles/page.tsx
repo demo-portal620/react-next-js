@@ -55,7 +55,7 @@ export default function RoleListPage() {
         setRoles(data.roles);
         setTotalCount(data.total);
       })
-      .catch((err) => setError(err.message || "Failed to load roles"))
+      .catch((err) => setError(err.message || t("ROLES_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [page, pageSize, search]);
 
@@ -73,12 +73,12 @@ export default function RoleListPage() {
     if (!deleteTarget) return;
     try {
       await deleteRole(deleteTarget.id);
-      toast({ description: "Role deleted." });
+      toast({ description: t("ROLES_DELETE_TOAST_SUCCESS") });
       load();
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Failed to delete role",
+        title: t("ROLES_DELETE_TOAST_ERROR_TITLE"),
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -89,19 +89,19 @@ export default function RoleListPage() {
   const columns: DataTableColumn<Role>[] = [
     {
       key: "name",
-      header: "Name",
+      header: t("ROLES_COL_NAME"),
       className: "px-4 py-3 font-medium",
       render: (role) => role.name,
     },
     {
       key: "description",
-      header: "Description",
+      header: t("ROLES_COL_DESCRIPTION"),
       className: "px-4 py-3 text-muted-foreground",
       render: (role) => role.description || "-",
     },
     {
       key: "permissions",
-      header: "Permissions",
+      header: t("ROLES_COL_PERMISSIONS"),
       csvValue: (role) => role.permissions.map((p) => p.name).join("; "),
       render: (role) => (
         <div className="flex flex-wrap gap-1">
@@ -126,28 +126,28 @@ export default function RoleListPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Roles</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("SIDEBAR_ROLES")}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage roles and the permissions each one grants. Assign roles to users from the user detail page.
+            {t("ROLES_SUBTITLE")}
           </p>
         </div>
         <Button onClick={() => router.push("/roles/new")}>
           <Plus className="h-4 w-4" />
-          Add Role
+          {t("ROLES_ADD")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Search</CardTitle>
-          <CardDescription>Search by role name</CardDescription>
+          <CardTitle className="text-base">{t("COMMON_SEARCH")}</CardTitle>
+          <CardDescription>{t("ROLES_SEARCH_DESC")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by role name..."
+                placeholder={t("ROLES_SEARCH_PLACEHOLDER")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-9"
@@ -172,7 +172,7 @@ export default function RoleListPage() {
         rows={roles}
         getRowKey={(role) => role.id}
         loading={loading}
-        emptyMessage="No roles found."
+        emptyMessage={t("ROLES_EMPTY")}
         itemLabel="role"
         exportFileName="roles"
         page={page}
@@ -189,11 +189,11 @@ export default function RoleListPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => router.push(`/roles/${role.id}`)}>
                 <Pencil className="h-4 w-4" />
-                Edit
+                {t("COMMON_EDIT")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push(`/roles/${role.id}/history`)}>
                 <History className="h-4 w-4" />
-                History
+                {t("ROLES_HISTORY")}
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(role)}>
                 <Trash2 className="h-4 w-4" />
@@ -205,7 +205,7 @@ export default function RoleListPage() {
       />
 
       <AppDialog
-        title="Delete role"
+        title={t("ROLES_DELETE_DIALOG_TITLE")}
         show={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onSave={confirmDelete}
@@ -214,8 +214,7 @@ export default function RoleListPage() {
         cancelLabel={t("COMMON_CANCEL")}
       >
         <p className="text-sm text-muted-foreground">
-          Are you sure you want to delete <span className="font-medium text-foreground">{deleteTarget?.name}</span>?
-          Any user holding it will immediately lose the permissions it grants.
+          {t("ROLES_DELETE_CONFIRM", { name: deleteTarget?.name })}
         </p>
       </AppDialog>
     </div>

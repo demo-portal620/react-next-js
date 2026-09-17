@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ import { loginUser, verifyLoginTotp } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { login } = useAuth();
   const [username, setUsername] = useState("");
@@ -40,7 +42,7 @@ export default function LoginPage() {
 
     // Client-side validation
     if (!username || !password) {
-      setError("Please enter both username and password.");
+      setError(t("LOGIN_ERROR_REQUIRED_FIELDS"));
       setIsLoading(false);
       return;
     }
@@ -66,7 +68,7 @@ export default function LoginPage() {
       setError(
         error instanceof Error
           ? error.message
-          : "Login failed. Please try again."
+          : t("LOGIN_ERROR_GENERIC")
       );
     } finally {
       setIsLoading(false);
@@ -78,7 +80,7 @@ export default function LoginPage() {
     setError("");
 
     if (!pendingToken || !totpCode) {
-      setError("Enter the 6-digit code from your authenticator.");
+      setError(t("LOGIN_TOTP_ERROR_REQUIRED"));
       return;
     }
 
@@ -95,7 +97,7 @@ export default function LoginPage() {
       setError(
         error instanceof Error
           ? error.message
-          : "Verification failed. Please try again."
+          : t("LOGIN_TOTP_ERROR_GENERIC")
       );
     } finally {
       setIsLoading(false);
@@ -122,10 +124,10 @@ export default function LoginPage() {
           </div>
 
           <CardTitle className="text-2xl font-bold text-center text-gray-800">
-            Admin Portal
+            {t("LOGIN_TITLE")}
           </CardTitle>
           <CardDescription className="text-center text-gray-600">
-            Sign in to access your dashboard
+            {t("LOGIN_SUBTITLE")}
           </CardDescription>
         </CardHeader>
 
@@ -141,7 +143,7 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="totp-code" className="text-sm font-medium text-gray-700">
-                  Authenticator code
+                  {t("LOGIN_TOTP_LABEL")}
                 </Label>
                 <div className="relative">
                   <ShieldCheck className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -159,7 +161,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Enter the 6-digit code from the Authenticator screen in the admin-portal Android app.
+                  {t("LOGIN_TOTP_HINT")}
                 </p>
               </div>
 
@@ -171,10 +173,10 @@ export default function LoginPage() {
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Verifying...</span>
+                    <span>{t("LOGIN_TOTP_SUBMIT_LOADING")}</span>
                   </div>
                 ) : (
-                  "Verify"
+                  t("LOGIN_TOTP_SUBMIT")
                 )}
               </Button>
 
@@ -187,7 +189,7 @@ export default function LoginPage() {
                   setError("");
                 }}
               >
-                Back to sign in
+                {t("LOGIN_TOTP_BACK")}
               </button>
             </form>
           ) : (
@@ -205,14 +207,14 @@ export default function LoginPage() {
                 htmlFor="username"
                 className="text-sm font-medium text-gray-700"
               >
-                Username
+                {t("LOGIN_USERNAME_LABEL")}
               </Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="username"
                   type="text"
-                  placeholder="Enter your username"
+                  placeholder={t("LOGIN_USERNAME_PLACEHOLDER")}
                   className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -227,14 +229,14 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="text-sm font-medium text-gray-700"
               >
-                Password
+                {t("LOGIN_PASSWORD_LABEL")}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t("LOGIN_PASSWORD_PLACEHOLDER")}
                   className="pl-10 pr-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -269,7 +271,7 @@ export default function LoginPage() {
                   htmlFor="remember"
                   className="text-gray-600 cursor-pointer"
                 >
-                  Remember me
+                  {t("LOGIN_REMEMBER_ME")}
                 </Label>
               </div>
               <button
@@ -277,7 +279,7 @@ export default function LoginPage() {
                 className="text-blue-600 hover:text-blue-800 font-medium"
                 onClick={() => router.push("/forgot-password")}
               >
-                Forgot password?
+                {t("LOGIN_FORGOT_PASSWORD")}
               </button>
             </div>
 
@@ -290,21 +292,21 @@ export default function LoginPage() {
               {isLoading ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Signing in...</span>
+                  <span>{t("LOGIN_SUBMIT_LOADING")}</span>
                 </div>
               ) : (
-                "Sign In"
+                t("LOGIN_SUBMIT")
               )}
             </Button>
 
             <p className="text-center text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
+              {t("LOGIN_NO_ACCOUNT")}{" "}
               <button
                 type="button"
                 onClick={() => router.push("/register")}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                Register
+                {t("LOGIN_REGISTER")}
               </button>
             </p>
           </form>
