@@ -6,7 +6,7 @@ import { authUtils } from "@/utils/auth";
 // on a 401 instead of each page silently failing with "Failed to load X".
 // Ported from an earlier scaffold's apiClient.ts/request.ts pattern
 // (heycloud/fe), adapted to this project's BaseResponse<T> shape.
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export interface BaseResponse<T> {
