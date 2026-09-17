@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   fetchFreelancerById,
   fetchSelectOptions,
@@ -49,6 +50,7 @@ function TogglePill({
 }
 
 export default function FreelancerFormPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const idParam = params?.id as string;
@@ -88,12 +90,13 @@ export default function FreelancerFormPage() {
           });
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load form data");
+        setError(err instanceof Error ? err.message : t("FREELANCER_FORM_LOAD_ERROR"));
       } finally {
         setLoading(false);
       }
     }
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idParam, isEditMode]);
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -131,7 +134,7 @@ export default function FreelancerFormPage() {
       }
       router.push("/freelancers");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save freelancer");
+      setError(err instanceof Error ? err.message : t("FREELANCER_FORM_SAVE_ERROR"));
     } finally {
       setSaving(false);
     }
@@ -146,21 +149,21 @@ export default function FreelancerFormPage() {
         className="-ml-2"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to list
+        {t("FREELANCER_FORM_BACK")}
       </Button>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isEditMode ? "Edit Freelancer" : "Register Freelancer"}</CardTitle>
+          <CardTitle>{isEditMode ? t("FREELANCER_FORM_EDIT_TITLE") : t("FREELANCER_FORM_CREATE_TITLE")}</CardTitle>
           <CardDescription>
             {isEditMode
-              ? "Update this freelancer's details, skillsets and hobbies."
-              : "Add a new freelancer to the directory."}
+              ? t("FREELANCER_FORM_EDIT_DESC")
+              : t("FREELANCER_FORM_CREATE_DESC")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-sm text-muted-foreground">{t("COMMON_LOADING")}</p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
@@ -171,7 +174,7 @@ export default function FreelancerFormPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t("FREELANCER_FORM_USERNAME")}</Label>
                 <Input
                   id="username"
                   name="username"
@@ -182,7 +185,7 @@ export default function FreelancerFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("FREELANCER_FORM_EMAIL")}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -194,7 +197,7 @@ export default function FreelancerFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Label htmlFor="phoneNumber">{t("FREELANCER_FORM_PHONE")}</Label>
                 <Input
                   id="phoneNumber"
                   name="phoneNumber"
@@ -204,10 +207,10 @@ export default function FreelancerFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Skillsets</Label>
+                <Label>{t("FREELANCER_FORM_SKILLSETS")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {availableSkillsets.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No skillsets available.</p>
+                    <p className="text-sm text-muted-foreground">{t("FREELANCER_FORM_NO_SKILLSETS")}</p>
                   )}
                   {availableSkillsets.map((opt) => (
                     <TogglePill
@@ -221,10 +224,10 @@ export default function FreelancerFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Hobbies</Label>
+                <Label>{t("FREELANCER_FORM_HOBBIES")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {availableHobbies.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No hobbies available.</p>
+                    <p className="text-sm text-muted-foreground">{t("FREELANCER_FORM_NO_HOBBIES")}</p>
                   )}
                   {availableHobbies.map((opt) => (
                     <TogglePill
@@ -239,14 +242,14 @@ export default function FreelancerFormPage() {
 
               <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={saving}>
-                  {saving ? "Saving..." : isEditMode ? "Update" : "Create"}
+                  {saving ? t("FREELANCER_FORM_SAVING") : isEditMode ? t("FREELANCER_FORM_UPDATE") : t("FREELANCER_FORM_CREATE")}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push("/freelancers")}
                 >
-                  Cancel
+                  {t("COMMON_CANCEL")}
                 </Button>
               </div>
             </form>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { fetchDataLog, DataLogRow } from "@/services/dataLogApi";
 import { fetchRoleById, Role } from "@/services/roleApi";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const operationTypeLabels: Record<number, string> = {
-  1: "Created",
-  2: "Updated",
-  3: "Deleted",
-};
-
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return "-";
   if (typeof value === "object") return JSON.stringify(value);
@@ -33,9 +28,16 @@ function formatColumnHeader(column: string): string {
 }
 
 export default function RoleHistoryPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const idParam = params?.id as string;
+
+  const operationTypeLabels: Record<number, string> = {
+    1: t("ROLE_HISTORY_OP_CREATED"),
+    2: t("ROLE_HISTORY_OP_UPDATED"),
+    3: t("ROLE_HISTORY_OP_DELETED"),
+  };
 
   const [role, setRole] = useState<Role | null>(null);
   const [columns, setColumns] = useState<string[]>([]);
@@ -52,7 +54,7 @@ export default function RoleHistoryPage() {
         setColumns(logData.columnTitleKeys);
         setRows(logData.datas);
       })
-      .catch((err) => setError(err.message || "Failed to load history"))
+      .catch((err) => setError(err.message || t("ROLE_HISTORY_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [idParam]);
 
@@ -65,14 +67,14 @@ export default function RoleHistoryPage() {
         className="-ml-2"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to list
+        {t("ROLE_HISTORY_BACK")}
       </Button>
 
       <Card>
         <CardHeader>
-          <CardTitle>History{role ? `: ${role.name}` : ""}</CardTitle>
+          <CardTitle>{t("ROLE_HISTORY_TITLE")}{role ? `: ${role.name}` : ""}</CardTitle>
           <CardDescription>
-            Every create, update and delete recorded for this role. Changed cells are highlighted.
+            {t("ROLE_HISTORY_DESC")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -87,9 +89,9 @@ export default function RoleHistoryPage() {
             <table className="w-full text-sm border">
               <thead>
                 <tr className="border-b bg-muted/50 text-left text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Operation Time</th>
-                  <th className="px-4 py-3 font-medium">Operation Type</th>
-                  <th className="px-4 py-3 font-medium">Operation By</th>
+                  <th className="px-4 py-3 font-medium">{t("ROLE_HISTORY_COL_TIME")}</th>
+                  <th className="px-4 py-3 font-medium">{t("ROLE_HISTORY_COL_TYPE")}</th>
+                  <th className="px-4 py-3 font-medium">{t("ROLE_HISTORY_COL_BY")}</th>
                   {columns.map((column) => (
                     <th key={column} className="px-4 py-3 font-medium">
                       {formatColumnHeader(column)}
@@ -101,13 +103,13 @@ export default function RoleHistoryPage() {
                 {loading ? (
                   <tr>
                     <td colSpan={3 + columns.length} className="px-4 py-8 text-center text-muted-foreground">
-                      Loading...
+                      {t("COMMON_LOADING")}
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
                     <td colSpan={3 + columns.length} className="px-4 py-8 text-center text-muted-foreground">
-                      No history recorded for this role yet.
+                      {t("ROLE_HISTORY_EMPTY")}
                     </td>
                   </tr>
                 ) : (

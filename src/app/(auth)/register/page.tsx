@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import { UserPlus, AlertCircle, CheckCircle2 } from "lucide-react";
 import { registerUser } from "@/services/authApi";
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [form, setForm] = useState({
     username: "",
@@ -42,11 +44,11 @@ export default function RegisterPage() {
     setSuccess("");
 
     if (!form.username || !form.password || !form.email) {
-      setError("Username, password and email are required.");
+      setError(t("REGISTER_ERROR_REQUIRED"));
       return;
     }
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("REGISTER_ERROR_PASSWORD_MISMATCH"));
       return;
     }
 
@@ -60,10 +62,10 @@ export default function RegisterPage() {
         lastname: form.lastname || undefined,
         phoneNumber: form.phoneNumber || undefined,
       });
-      setSuccess("Account created. Check your email for a verification link before logging in.");
+      setSuccess(t("REGISTER_SUCCESS"));
       setTimeout(() => router.push("/login"), 2500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
+      setError(err instanceof Error ? err.message : t("REGISTER_ERROR_GENERIC"));
     } finally {
       setIsLoading(false);
     }
@@ -80,10 +82,10 @@ export default function RegisterPage() {
           </div>
 
           <CardTitle className="text-2xl font-bold text-center text-gray-800">
-            Create Account
+            {t("REGISTER_TITLE")}
           </CardTitle>
           <CardDescription className="text-center text-gray-600">
-            Register for Admin Portal access
+            {t("REGISTER_SUBTITLE")}
           </CardDescription>
         </CardHeader>
 
@@ -103,7 +105,7 @@ export default function RegisterPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t("REGISTER_USERNAME")}</Label>
               <Input
                 id="username"
                 name="username"
@@ -115,7 +117,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("REGISTER_EMAIL")}</Label>
               <Input
                 id="email"
                 name="email"
@@ -129,7 +131,7 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="firstname">First Name</Label>
+                <Label htmlFor="firstname">{t("REGISTER_FIRSTNAME")}</Label>
                 <Input
                   id="firstname"
                   name="firstname"
@@ -139,7 +141,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastname">Last Name</Label>
+                <Label htmlFor="lastname">{t("REGISTER_LASTNAME")}</Label>
                 <Input
                   id="lastname"
                   name="lastname"
@@ -151,7 +153,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Label htmlFor="phoneNumber">{t("REGISTER_PHONE")}</Label>
               <Input
                 id="phoneNumber"
                 name="phoneNumber"
@@ -162,7 +164,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("REGISTER_PASSWORD")}</Label>
               <Input
                 id="password"
                 name="password"
@@ -175,7 +177,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t("REGISTER_CONFIRM_PASSWORD")}</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -192,17 +194,17 @@ export default function RegisterPage() {
               className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               disabled={isLoading}
             >
-              {isLoading ? "Creating account..." : "Register"}
+              {isLoading ? t("REGISTER_SUBMIT_LOADING") : t("REGISTER_SUBMIT")}
             </Button>
 
             <p className="text-center text-sm text-gray-600">
-              Already have an account?{" "}
+              {t("REGISTER_HAVE_ACCOUNT")}{" "}
               <button
                 type="button"
                 onClick={() => router.push("/login")}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                Sign in
+                {t("REGISTER_SIGNIN")}
               </button>
             </p>
           </form>

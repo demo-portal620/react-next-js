@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ApkVersion,
   fetchApkVersions,
@@ -30,6 +31,7 @@ import { QRCodeSVG } from "qrcode.react";
 const DEFAULT_APP_CODE = "AP_ANDROID";
 
 export default function ApkVersionsPage() {
+  const { t } = useTranslation();
   const [versions, setVersions] = useState<ApkVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,7 +60,7 @@ export default function ApkVersionsPage() {
         setVersions(data.versions);
         setTotalCount(data.total);
       })
-      .catch((err) => setError(err.message || "Failed to load APK versions"))
+      .catch((err) => setError(err.message || t("APK_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [page, pageSize]);
 
@@ -71,12 +73,12 @@ export default function ApkVersionsPage() {
     setUploadError("");
 
     if (!file) {
-      setUploadError("Choose an .apk file first.");
+      setUploadError(t("APK_FILE_REQUIRED"));
       return;
     }
     const parsedVersionCode = Number(versionCode);
     if (!versionName.trim() || !Number.isInteger(parsedVersionCode) || parsedVersionCode <= 0) {
-      setUploadError("Version name and a positive integer version code are required.");
+      setUploadError(t("APK_FIELDS_REQUIRED"));
       return;
     }
 
@@ -101,7 +103,7 @@ export default function ApkVersionsPage() {
         setPage(1);
       }
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(err instanceof Error ? err.message : t("APK_UPLOAD_FAILED"));
     } finally {
       setUploading(false);
     }
@@ -112,55 +114,55 @@ export default function ApkVersionsPage() {
       await setApkVersionActive(version.id, !version.active);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update status");
+      alert(err instanceof Error ? err.message : t("APK_STATUS_UPDATE_FAILED"));
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this APK version? This cannot be undone.")) return;
+    if (!confirm(t("APK_DELETE_CONFIRM"))) return;
     try {
       await deleteApkVersion(id);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete");
+      alert(err instanceof Error ? err.message : t("APK_DELETE_FAILED"));
     }
   }
 
   const columns: DataTableColumn<ApkVersion>[] = [
-    { key: "appCode", header: "App", className: "px-4 py-3 font-medium" },
+    { key: "appCode", header: t("APK_COL_APP"), className: "px-4 py-3 font-medium" },
     {
       key: "version",
-      header: "Version",
-      csvValue: (v) => `${v.versionName} (code ${v.versionCode})`,
+      header: t("APK_COL_VERSION"),
+      csvValue: (v) => `${v.versionName} ${t("APK_VERSION_CODE_SUFFIX", { code: v.versionCode })}`,
       render: (v) => (
         <>
-          {v.versionName} <span className="text-muted-foreground">(code {v.versionCode})</span>
+          {v.versionName} <span className="text-muted-foreground">{t("APK_VERSION_CODE_SUFFIX", { code: v.versionCode })}</span>
         </>
       ),
     },
-    { key: "fileName", header: "File", className: "px-4 py-3 text-muted-foreground" },
+    { key: "fileName", header: t("APK_COL_FILE"), className: "px-4 py-3 text-muted-foreground" },
     {
       key: "fileSize",
-      header: "Size",
+      header: t("APK_COL_SIZE"),
       className: "px-4 py-3 text-muted-foreground",
       csvValue: (v) => formatApkSize(v.fileSize),
       render: (v) => formatApkSize(v.fileSize),
     },
     {
       key: "createdDate",
-      header: "Uploaded",
+      header: t("APK_COL_UPLOADED"),
       className: "px-4 py-3 text-muted-foreground",
       render: (v) => (v.createdDate ? new Date(v.createdDate).toLocaleString() : "-"),
     },
     {
       key: "downloadCount",
-      header: "Downloads",
+      header: t("APK_COL_DOWNLOADS"),
       className: "px-4 py-3 text-muted-foreground",
     },
     {
       key: "active",
-      header: "Status",
-      csvValue: (v) => (v.active ? "Active" : "Inactive"),
+      header: t("APK_COL_STATUS"),
+      csvValue: (v) => (v.active ? t("APK_STATUS_ACTIVE") : t("APK_STATUS_INACTIVE")),
       render: (v) => (
         <button
           onClick={() => handleToggleActive(v)}
@@ -169,7 +171,7 @@ export default function ApkVersionsPage() {
             v.active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
           )}
         >
-          {v.active ? "Active" : "Inactive"}
+          {v.active ? t("APK_STATUS_ACTIVE") : t("APK_STATUS_INACTIVE")}
         </button>
       ),
     },
@@ -178,24 +180,23 @@ export default function ApkVersionsPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">APK Versions</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("SIDEBAR_APK_VERSIONS")}</h1>
         <p className="text-sm text-muted-foreground">
-          Upload builds of the Android app and manage which one devices are told about
-          when they call the check-update endpoint.
+          {t("APK_SUBTITLE")}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Upload a build</CardTitle>
+          <CardTitle className="text-base">{t("APK_UPLOAD_TITLE")}</CardTitle>
           <CardDescription>
-            The highest version code marked Active is what devices are offered.
+            {t("APK_UPLOAD_DESC")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpload} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="apk-file-input">APK file</Label>
+              <Label htmlFor="apk-file-input">{t("APK_FILE_LABEL")}</Label>
               <input
                 id="apk-file-input"
                 type="file"
@@ -206,7 +207,7 @@ export default function ApkVersionsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="app-code">App code</Label>
+              <Label htmlFor="app-code">{t("APK_APP_CODE_LABEL")}</Label>
               <Input
                 id="app-code"
                 value={appCode}
@@ -216,7 +217,7 @@ export default function ApkVersionsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="version-name">Version name</Label>
+              <Label htmlFor="version-name">{t("APK_VERSION_NAME_LABEL")}</Label>
               <Input
                 id="version-name"
                 value={versionName}
@@ -226,7 +227,7 @@ export default function ApkVersionsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="version-code">Version code</Label>
+              <Label htmlFor="version-code">{t("APK_VERSION_CODE_LABEL")}</Label>
               <Input
                 id="version-code"
                 type="number"
@@ -238,13 +239,13 @@ export default function ApkVersionsPage() {
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="release-notes">Release notes</Label>
+              <Label htmlFor="release-notes">{t("APK_RELEASE_NOTES_LABEL")}</Label>
               <textarea
                 id="release-notes"
                 value={releaseNotes}
                 onChange={(e) => setReleaseNotes(e.target.value)}
                 rows={3}
-                placeholder="What changed in this build?"
+                placeholder={t("APK_RELEASE_NOTES_PLACEHOLDER")}
                 className="border-input flex w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
               />
             </div>
@@ -259,7 +260,7 @@ export default function ApkVersionsPage() {
             <div className="sm:col-span-2">
               <Button type="submit" disabled={uploading}>
                 <UploadCloud className="h-4 w-4" />
-                {uploading ? "Uploading..." : "Upload"}
+                {uploading ? t("APK_UPLOADING") : t("APK_UPLOAD")}
               </Button>
             </div>
           </form>
@@ -278,7 +279,7 @@ export default function ApkVersionsPage() {
         rows={versions}
         getRowKey={(v) => v.id}
         loading={loading}
-        emptyMessage="No builds uploaded yet."
+        emptyMessage={t("APK_EMPTY")}
         itemLabel="build"
         page={page}
         pageSize={pageSize}
@@ -290,7 +291,7 @@ export default function ApkVersionsPage() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              title="Show QR code to download on a phone"
+              title={t("APK_QR_BUTTON_TITLE")}
               onClick={() => setQrVersion(v)}
             >
               <QrCode className="h-4 w-4" />
@@ -313,7 +314,7 @@ export default function ApkVersionsPage() {
       />
 
       <AppDialog
-        title={qrVersion ? `Download ${qrVersion.appCode} ${qrVersion.versionName}` : ""}
+        title={qrVersion ? t("APK_QR_DIALOG_TITLE", { appCode: qrVersion.appCode, versionName: qrVersion.versionName }) : ""}
         show={qrVersion !== null}
         onClose={() => setQrVersion(null)}
         showFooter={false}
@@ -322,8 +323,7 @@ export default function ApkVersionsPage() {
         {qrVersion && (
           <div className="flex flex-col items-center gap-3 py-2">
             <p className="text-sm text-muted-foreground text-center">
-              Scan with your phone&apos;s camera to open the download link directly -
-              a fallback for when the app&apos;s own auto-update can&apos;t reach it.
+              {t("APK_QR_HINT")}
             </p>
             <div className="rounded-lg border bg-white p-4">
               <QRCodeSVG value={apkDownloadUrl(qrVersion.id)} size={220} />

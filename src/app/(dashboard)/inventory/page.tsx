@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Product,
   fetchProducts,
@@ -34,6 +35,7 @@ const emptyForm = {
 };
 
 export default function InventoryPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function InventoryPage() {
         setProducts(data.products);
         setTotalCount(data.total);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load inventory"))
+      .catch((err) => setError(err instanceof Error ? err.message : t("INVENTORY_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [page, pageSize, search]);
 
@@ -77,7 +79,7 @@ export default function InventoryPage() {
   async function handleAddProduct() {
     setFormError("");
     if (!form.name.trim() || !form.sku.trim()) {
-      setFormError("Name and SKU are required.");
+      setFormError(t("INVENTORY_ADD_REQUIRED"));
       return;
     }
     setSaving(true);
@@ -94,7 +96,7 @@ export default function InventoryPage() {
       setForm(emptyForm);
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to add product");
+      setFormError(err instanceof Error ? err.message : t("INVENTORY_ADD_ERROR"));
     } finally {
       setSaving(false);
     }
@@ -121,7 +123,7 @@ export default function InventoryPage() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Import failed",
+        title: t("INVENTORY_IMPORT_FAILED_TITLE"),
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -130,17 +132,17 @@ export default function InventoryPage() {
   }
 
   const columns: DataTableColumn<Product>[] = [
-    { key: "name", header: "Name", className: "px-4 py-3 font-medium" },
-    { key: "sku", header: "SKU", className: "px-4 py-3 text-muted-foreground" },
+    { key: "name", header: t("INVENTORY_COL_NAME"), className: "px-4 py-3 font-medium" },
+    { key: "sku", header: t("INVENTORY_COL_SKU"), className: "px-4 py-3 text-muted-foreground" },
     {
       key: "category",
-      header: "Category",
+      header: t("INVENTORY_COL_CATEGORY"),
       className: "px-4 py-3 text-muted-foreground",
       render: (p) => p.category || "-",
     },
     {
       key: "quantity",
-      header: "Quantity",
+      header: t("INVENTORY_COL_QUANTITY"),
       render: (p) => (
         <span
           className={cn(
@@ -152,10 +154,10 @@ export default function InventoryPage() {
         </span>
       ),
     },
-    { key: "reorderThreshold", header: "Reorder At", className: "px-4 py-3 text-muted-foreground" },
+    { key: "reorderThreshold", header: t("INVENTORY_COL_REORDER"), className: "px-4 py-3 text-muted-foreground" },
     {
       key: "unitPrice",
-      header: "Unit Price",
+      header: t("INVENTORY_COL_UNIT_PRICE"),
       className: "px-4 py-3 text-muted-foreground",
       render: (p) => (p.unitPrice != null ? `$${p.unitPrice.toFixed(2)}` : "-"),
     },
@@ -165,9 +167,9 @@ export default function InventoryPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Inventory</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("INVENTORY_TITLE")}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage stock levels - rows in red are at or below their reorder threshold.
+            {t("INVENTORY_SUBTITLE")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -184,29 +186,29 @@ export default function InventoryPage() {
             disabled={importing}
           >
             <Upload className="h-4 w-4" />
-            {importing ? "Importing..." : "Import CSV"}
+            {importing ? t("INVENTORY_IMPORTING") : t("INVENTORY_IMPORT")}
           </Button>
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="h-4 w-4" />
-            Add Product
+            {t("INVENTORY_ADD")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Search</CardTitle>
-          <CardDescription>Search by name or SKU</CardDescription>
+          <CardTitle className="text-base">{t("COMMON_SEARCH")}</CardTitle>
+          <CardDescription>{t("INVENTORY_SEARCH_DESC")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <Input
-              placeholder="Search by name or SKU..."
+              placeholder={t("INVENTORY_SEARCH_PLACEHOLDER")}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
             <Button type="submit" variant="secondary">
-              Search
+              {t("COMMON_SEARCH")}
             </Button>
           </form>
         </CardContent>
@@ -224,7 +226,7 @@ export default function InventoryPage() {
         rows={products}
         getRowKey={(p) => p.id}
         loading={loading}
-        emptyMessage="No products found."
+        emptyMessage={t("INVENTORY_EMPTY")}
         itemLabel="product"
         exportFileName="inventory"
         page={page}
@@ -234,7 +236,7 @@ export default function InventoryPage() {
       />
 
       <AppDialog
-        title="Add product"
+        title={t("INVENTORY_DIALOG_TITLE")}
         show={showAddDialog}
         onClose={() => {
           setShowAddDialog(false);
@@ -242,7 +244,7 @@ export default function InventoryPage() {
           setFormError("");
         }}
         onSave={handleAddProduct}
-        saveLabel={saving ? "Saving..." : "Save"}
+        saveLabel={saving ? t("INVENTORY_SAVING") : t("COMMON_SAVE")}
       >
         <div className="space-y-3">
           {formError && (
@@ -252,7 +254,7 @@ export default function InventoryPage() {
             </Alert>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor="p-name">Name</Label>
+            <Label htmlFor="p-name">{t("INVENTORY_FIELD_NAME")}</Label>
             <Input
               id="p-name"
               value={form.name}
@@ -260,7 +262,7 @@ export default function InventoryPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="p-sku">SKU</Label>
+            <Label htmlFor="p-sku">{t("INVENTORY_FIELD_SKU")}</Label>
             <Input
               id="p-sku"
               value={form.sku}
@@ -268,7 +270,7 @@ export default function InventoryPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="p-category">Category</Label>
+            <Label htmlFor="p-category">{t("INVENTORY_FIELD_CATEGORY")}</Label>
             <Input
               id="p-category"
               value={form.category}
@@ -277,7 +279,7 @@ export default function InventoryPage() {
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="p-quantity">Quantity</Label>
+              <Label htmlFor="p-quantity">{t("INVENTORY_FIELD_QUANTITY")}</Label>
               <Input
                 id="p-quantity"
                 type="number"
@@ -286,7 +288,7 @@ export default function InventoryPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="p-reorder">Reorder At</Label>
+              <Label htmlFor="p-reorder">{t("INVENTORY_FIELD_REORDER")}</Label>
               <Input
                 id="p-reorder"
                 type="number"
@@ -296,7 +298,7 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="p-price">Unit Price</Label>
+            <Label htmlFor="p-price">{t("INVENTORY_FIELD_UNIT_PRICE")}</Label>
             <Input
               id="p-price"
               type="number"

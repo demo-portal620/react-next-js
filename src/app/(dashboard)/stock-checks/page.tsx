@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   StockCheckTask,
   fetchStockCheckTasks,
@@ -42,8 +43,15 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function StockChecksPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
+
+  const statusLabels: Record<string, string> = {
+    PENDING: t("STOCK_STATUS_PENDING"),
+    SUBMITTED: t("STOCK_STATUS_SUBMITTED"),
+    APPROVED: t("STOCK_STATUS_APPROVED"),
+  };
   const [tasks, setTasks] = useState<StockCheckTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,7 +92,7 @@ export default function StockChecksPage() {
 
   function useCurrentLocationForSite() {
     if (!navigator.geolocation) {
-      toast({ variant: "destructive", title: "Geolocation isn't available in this browser" });
+      toast({ variant: "destructive", title: t("STOCK_CHECKS_GEO_UNAVAILABLE") });
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -93,7 +101,7 @@ export default function StockChecksPage() {
         setSiteLongitude(String(position.coords.longitude));
       },
       (err) => {
-        toast({ variant: "destructive", title: "Couldn't get your location", description: err.message });
+        toast({ variant: "destructive", title: t("STOCK_CHECKS_GEO_ERROR"), description: err.message });
       }
     );
   }
@@ -103,17 +111,17 @@ export default function StockChecksPage() {
     const longitude = Number(siteLongitude);
     const radiusMeters = Number(siteRadius);
     if (!siteLatitude || !siteLongitude || Number.isNaN(latitude) || Number.isNaN(longitude)) {
-      toast({ variant: "destructive", title: "Latitude and longitude are required" });
+      toast({ variant: "destructive", title: t("STOCK_CHECKS_LATLNG_REQUIRED") });
       return;
     }
     setSavingSite(true);
     try {
       await updateWorkSiteConfig({ latitude, longitude, radiusMeters });
-      toast({ description: "Work site updated." });
+      toast({ description: t("STOCK_CHECKS_SITE_UPDATED") });
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Failed to update work site",
+        title: t("STOCK_CHECKS_SITE_UPDATE_ERROR"),
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -129,7 +137,7 @@ export default function StockChecksPage() {
         setTasks(data.tasks);
         setTotalCount(data.total);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load tasks"))
+      .catch((err) => setError(err instanceof Error ? err.message : t("STOCK_CHECKS_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [page, pageSize]);
 
@@ -192,11 +200,11 @@ export default function StockChecksPage() {
   async function handleCreate() {
     setFormError("");
     if (!assignedTo) {
-      setFormError("Choose a worker to assign.");
+      setFormError(t("STOCK_CHECKS_ASSIGN_REQUIRED"));
       return;
     }
     if (selectedProductIds.length === 0) {
-      setFormError("Select at least one product for the checklist.");
+      setFormError(t("STOCK_CHECKS_PRODUCTS_REQUIRED"));
       return;
     }
     setSaving(true);
@@ -209,7 +217,7 @@ export default function StockChecksPage() {
       setShowCreateDialog(false);
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to create task");
+      setFormError(err instanceof Error ? err.message : t("STOCK_CHECKS_CREATE_ERROR"));
     } finally {
       setSaving(false);
     }
@@ -218,43 +226,43 @@ export default function StockChecksPage() {
   const columns: DataTableColumn<StockCheckTask>[] = [
     {
       key: "title",
-      header: "Title",
+      header: t("STOCK_CHECKS_COL_TITLE"),
       className: "px-4 py-3 font-medium",
-      render: (t) => t.title || "(untitled)",
+      render: (task) => task.title || t("STOCK_CHECKS_UNTITLED"),
     },
     {
       key: "status",
-      header: "Status",
-      render: (t) => (
+      header: t("STOCK_CHECKS_COL_STATUS"),
+      render: (task) => (
         <span
           className={cn(
             "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-            statusStyle[t.status] ?? statusStyle.PENDING
+            statusStyle[task.status] ?? statusStyle.PENDING
           )}
         >
-          {t.status}
+          {statusLabels[task.status] ?? task.status}
         </span>
       ),
     },
     {
       key: "offSite",
-      header: "Location",
-      render: (t) =>
-        t.offSite === true ? (
+      header: t("STOCK_CHECKS_COL_LOCATION"),
+      render: (task) =>
+        task.offSite === true ? (
           <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive px-2.5 py-0.5 text-xs font-medium">
-            Off-site
+            {t("STOCK_CHECKS_OFFSITE")}
           </span>
-        ) : t.offSite === false ? (
-          <span className="text-muted-foreground text-xs">On-site</span>
+        ) : task.offSite === false ? (
+          <span className="text-muted-foreground text-xs">{t("STOCK_CHECKS_ONSITE")}</span>
         ) : (
           <span className="text-muted-foreground text-xs">-</span>
         ),
     },
     {
       key: "createdDate",
-      header: "Created",
+      header: t("STOCK_CHECKS_COL_CREATED"),
       className: "px-4 py-3 text-muted-foreground",
-      render: (t) => (t.createdDate ? new Date(t.createdDate).toLocaleString() : "-"),
+      render: (task) => (task.createdDate ? new Date(task.createdDate).toLocaleString() : "-"),
     },
   ];
 
@@ -262,29 +270,27 @@ export default function StockChecksPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Stock Checks</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("STOCK_CHECKS_TITLE")}</h1>
           <p className="text-sm text-muted-foreground">
-            Assign a worker to count a checklist of inventory items, then review and sign off.
+            {t("STOCK_CHECKS_SUBTITLE")}
           </p>
         </div>
         <Button onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Create Task
+          {t("STOCK_CHECKS_CREATE")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Work Site</CardTitle>
+          <CardTitle className="text-base">{t("STOCK_CHECKS_SITE_TITLE")}</CardTitle>
           <CardDescription>
-            The single location submissions are checked against - a task submitted from
-            outside this radius gets flagged &ldquo;Off-site&rdquo; below for review, it
-            doesn&apos;t get blocked.
+            {t("STOCK_CHECKS_SITE_DESC")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-4 items-end">
           <div className="space-y-1.5">
-            <Label htmlFor="site-lat">Latitude</Label>
+            <Label htmlFor="site-lat">{t("STOCK_CHECKS_LATITUDE")}</Label>
             <Input
               id="site-lat"
               value={siteLatitude}
@@ -293,7 +299,7 @@ export default function StockChecksPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="site-lng">Longitude</Label>
+            <Label htmlFor="site-lng">{t("STOCK_CHECKS_LONGITUDE")}</Label>
             <Input
               id="site-lng"
               value={siteLongitude}
@@ -302,7 +308,7 @@ export default function StockChecksPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="site-radius">Radius (meters)</Label>
+            <Label htmlFor="site-radius">{t("STOCK_CHECKS_RADIUS")}</Label>
             <Input
               id="site-radius"
               type="number"
@@ -315,13 +321,13 @@ export default function StockChecksPage() {
               type="button"
               variant="outline"
               onClick={useCurrentLocationForSite}
-              title="Fill in latitude/longitude from this browser's current location"
+              title={t("STOCK_CHECKS_USE_MY_LOCATION_TITLE")}
             >
               <LocateFixed className="h-4 w-4" />
-              Use my location
+              {t("STOCK_CHECKS_USE_MY_LOCATION")}
             </Button>
             <Button type="button" onClick={handleSaveSite} disabled={savingSite}>
-              {savingSite ? "Saving..." : "Save"}
+              {savingSite ? t("STOCK_CHECKS_SAVING") : t("COMMON_SAVE")}
             </Button>
           </div>
         </CardContent>
@@ -339,25 +345,25 @@ export default function StockChecksPage() {
         rows={tasks}
         getRowKey={(t) => t.id}
         loading={loading}
-        emptyMessage="No stock-check tasks yet."
+        emptyMessage={t("STOCK_CHECKS_EMPTY")}
         itemLabel="task"
         page={page}
         pageSize={pageSize}
         total={totalCount}
         onPageChange={setPage}
-        actions={(t) => (
-          <Button variant="ghost" size="sm" onClick={() => router.push(`/stock-checks/${t.id}`)}>
-            View
+        actions={(task) => (
+          <Button variant="ghost" size="sm" onClick={() => router.push(`/stock-checks/${task.id}`)}>
+            {t("COMMON_VIEW")}
           </Button>
         )}
       />
 
       <AppDialog
-        title="Create stock-check task"
+        title={t("STOCK_CHECKS_DIALOG_TITLE")}
         show={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
         onSave={handleCreate}
-        saveLabel={saving ? "Creating..." : "Create"}
+        saveLabel={saving ? t("STOCK_CHECKS_CREATING") : t("STOCK_CHECKS_CREATE_SUBMIT")}
         width="480px"
       >
         <div className="space-y-3">
@@ -368,29 +374,29 @@ export default function StockChecksPage() {
             </Alert>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor="task-title">Title (optional)</Label>
+            <Label htmlFor="task-title">{t("STOCK_CHECKS_TASK_TITLE_LABEL")}</Label>
             <Input
               id="task-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Weekly warehouse count"
+              placeholder={t("STOCK_CHECKS_TASK_TITLE_PLACEHOLDER")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Assign to</Label>
+            <Label>{t("STOCK_CHECKS_ASSIGN_TO")}</Label>
             <Input
               value={workerSearch}
               onChange={(e) => setWorkerSearch(e.target.value)}
-              placeholder="Search workers by name..."
+              placeholder={t("STOCK_CHECKS_WORKER_SEARCH_PLACEHOLDER")}
             />
             <Select value={assignedTo} onValueChange={setAssignedTo}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose a worker" />
+                <SelectValue placeholder={t("STOCK_CHECKS_WORKER_PLACEHOLDER")} />
               </SelectTrigger>
               <SelectContent>
                 {workers.length === 0 ? (
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    {workerSearch ? "No matching WORKER accounts." : "No WORKER accounts yet."}
+                    {workerSearch ? t("STOCK_CHECKS_NO_MATCHING_WORKERS") : t("STOCK_CHECKS_NO_WORKERS")}
                   </div>
                 ) : (
                   workers.map((w) => (
@@ -403,17 +409,17 @@ export default function StockChecksPage() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Checklist{selectedProductIds.length > 0 ? ` (${selectedProductIds.length} selected)` : ""}</Label>
+            <Label>{t("STOCK_CHECKS_CHECKLIST")}{selectedProductIds.length > 0 ? ` (${t("STOCK_CHECKS_CHECKLIST_SELECTED", { count: selectedProductIds.length })})` : ""}</Label>
             <Input
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
-              placeholder="Search products by name or SKU..."
+              placeholder={t("STOCK_CHECKS_PRODUCT_SEARCH_PLACEHOLDER")}
             />
             <Card className="max-h-56 overflow-y-auto">
               <CardContent className="p-2 space-y-1">
                 {checklistCandidates.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-2">
-                    {productSearch ? "No matching products." : "No products in inventory yet."}
+                    {productSearch ? t("STOCK_CHECKS_NO_MATCHING_PRODUCTS") : t("STOCK_CHECKS_NO_PRODUCTS")}
                   </p>
                 ) : (
                   checklistCandidates.map((p) => (

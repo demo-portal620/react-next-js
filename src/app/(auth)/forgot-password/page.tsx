@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import { KeyRound, AlertCircle, CheckCircle2 } from "lucide-react";
 import { requestPasswordReset } from "@/services/authApi";
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +30,7 @@ export default function ForgotPasswordPage() {
     setError("");
 
     if (!email) {
-      setError("Please enter your email address.");
+      setError(t("FORGOT_PASSWORD_ERROR_REQUIRED"));
       return;
     }
 
@@ -40,7 +42,7 @@ export default function ForgotPasswordPage() {
       // so this never leaks account existence.
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setError(err instanceof Error ? err.message : t("FORGOT_PASSWORD_ERROR_GENERIC"));
     } finally {
       setIsLoading(false);
     }
@@ -57,10 +59,10 @@ export default function ForgotPasswordPage() {
           </div>
 
           <CardTitle className="text-2xl font-bold text-center text-gray-800">
-            Forgot Password
+            {t("FORGOT_PASSWORD_TITLE")}
           </CardTitle>
           <CardDescription className="text-center text-gray-600">
-            Enter your email and we&apos;ll send you a reset link
+            {t("FORGOT_PASSWORD_SUBTITLE")}
           </CardDescription>
         </CardHeader>
 
@@ -70,7 +72,7 @@ export default function ForgotPasswordPage() {
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertDescription>
-                  If that email is registered, a password reset link has been sent. Check your inbox.
+                  {t("FORGOT_PASSWORD_SUCCESS")}
                 </AlertDescription>
               </Alert>
               <Button
@@ -78,7 +80,7 @@ export default function ForgotPasswordPage() {
                 className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                 onClick={() => router.push("/login")}
               >
-                Back to Sign In
+                {t("FORGOT_PASSWORD_BACK_TO_SIGNIN")}
               </Button>
             </div>
           ) : (
@@ -91,11 +93,11 @@ export default function ForgotPasswordPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("FORGOT_PASSWORD_EMAIL_LABEL")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("FORGOT_PASSWORD_EMAIL_PLACEHOLDER")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -107,17 +109,17 @@ export default function ForgotPasswordPage() {
                 className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                 disabled={isLoading}
               >
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? t("FORGOT_PASSWORD_SUBMIT_LOADING") : t("FORGOT_PASSWORD_SUBMIT")}
               </Button>
 
               <p className="text-center text-sm text-gray-600">
-                Remembered your password?{" "}
+                {t("FORGOT_PASSWORD_REMEMBERED")}{" "}
                 <button
                   type="button"
                   onClick={() => router.push("/login")}
                   className="text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  Sign in
+                  {t("FORGOT_PASSWORD_SIGNIN")}
                 </button>
               </p>
             </form>

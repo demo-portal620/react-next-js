@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   IpWhitelistEntry,
   fetchIpWhitelistConfig,
@@ -24,6 +25,7 @@ import { AlertTriangle, ShieldAlert, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function IpWhitelistPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [enabled, setEnabled] = useState(false);
   const [entries, setEntries] = useState<IpWhitelistEntry[]>([]);
@@ -42,7 +44,7 @@ export default function IpWhitelistPage() {
         setEnabled(config.enabled);
         setEntries(entryList);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load whitelist"))
+      .catch((err) => setError(err instanceof Error ? err.message : t("IP_WHITELIST_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -56,9 +58,9 @@ export default function IpWhitelistPage() {
     try {
       const config = await setIpWhitelistEnabled(!enabled);
       setEnabled(config.enabled);
-      toast({ description: config.enabled ? "IP whitelist enabled." : "IP whitelist disabled." });
+      toast({ description: config.enabled ? t("IP_WHITELIST_ENABLED_TOAST") : t("IP_WHITELIST_DISABLED_TOAST") });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update whitelist");
+      setError(err instanceof Error ? err.message : t("IP_WHITELIST_TOGGLE_ERROR"));
     } finally {
       setToggling(false);
     }
@@ -66,7 +68,7 @@ export default function IpWhitelistPage() {
 
   async function handleAdd() {
     if (!ipOrCidr.trim()) {
-      setError("Enter an IP address or CIDR range.");
+      setError(t("IP_WHITELIST_REQUIRE_IP"));
       return;
     }
     setError("");
@@ -77,7 +79,7 @@ export default function IpWhitelistPage() {
       setDescription("");
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add entry");
+      setError(err instanceof Error ? err.message : t("IP_WHITELIST_ADD_ERROR"));
     } finally {
       setAdding(false);
     }
@@ -90,7 +92,7 @@ export default function IpWhitelistPage() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Failed to remove entry",
+        title: t("IP_WHITELIST_REMOVE_ERROR_TITLE"),
         description: err instanceof Error ? err.message : undefined,
       });
     }
@@ -99,21 +101,18 @@ export default function IpWhitelistPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">IP Whitelist</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("IP_WHITELIST_TITLE")}</h1>
         <p className="text-sm text-muted-foreground">
-          Demo of a network-level access gate, common in admin panels for regulated industries
-          (e.g. iGaming) - blocks logins and API access from any network not on this list.
+          {t("IP_WHITELIST_SUBTITLE")}
         </p>
       </div>
 
       <Alert>
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          Disabled by default on purpose - enabling this without your current IP on the list
-          below will lock you out. Recovery doesn&apos;t require the portal: set{" "}
-          <code className="text-xs">IP_WHITELIST_ENABLED=false</code> as an environment variable
-          on the backend host and redeploy (on Render, use &ldquo;Save and Deploy&rdquo;, not
-          &ldquo;Save Only&rdquo;) to restore access regardless of what&apos;s configured here.
+          {t("IP_WHITELIST_WARNING_PART1")}{" "}
+          <code className="text-xs">IP_WHITELIST_ENABLED=false</code>{" "}
+          {t("IP_WHITELIST_WARNING_PART2")}
         </AlertDescription>
       </Alert>
 
@@ -129,9 +128,9 @@ export default function IpWhitelistPage() {
             <div className="flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-muted-foreground" />
               <div>
-                <CardTitle className="text-base">Whitelist enforcement</CardTitle>
+                <CardTitle className="text-base">{t("IP_WHITELIST_ENFORCEMENT_TITLE")}</CardTitle>
                 <CardDescription>
-                  Currently <span className="font-medium">{enabled ? "ON" : "OFF"}</span>
+                  {t("IP_WHITELIST_CURRENTLY")} <span className="font-medium">{enabled ? t("IP_WHITELIST_ON") : t("IP_WHITELIST_OFF")}</span>
                 </CardDescription>
               </div>
             </div>
@@ -140,7 +139,7 @@ export default function IpWhitelistPage() {
               onClick={handleToggle}
               disabled={loading || toggling}
             >
-              {toggling ? "Updating..." : enabled ? "Disable" : "Enable"}
+              {toggling ? t("IP_WHITELIST_UPDATING") : enabled ? t("IP_WHITELIST_DISABLE") : t("IP_WHITELIST_ENABLE")}
             </Button>
           </div>
         </CardHeader>
@@ -148,13 +147,13 @@ export default function IpWhitelistPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Allowed networks</CardTitle>
-          <CardDescription>Plain IPs or CIDR ranges (e.g. 203.0.113.42 or 203.0.113.0/24).</CardDescription>
+          <CardTitle className="text-base">{t("IP_WHITELIST_ALLOWED_NETWORKS")}</CardTitle>
+          <CardDescription>{t("IP_WHITELIST_ALLOWED_NETWORKS_DESC")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end">
             <div className="space-y-1.5">
-              <Label htmlFor="ip-entry">IP or CIDR</Label>
+              <Label htmlFor="ip-entry">{t("IP_WHITELIST_IP_LABEL")}</Label>
               <Input
                 id="ip-entry"
                 value={ipOrCidr}
@@ -164,25 +163,25 @@ export default function IpWhitelistPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ip-description">Description (optional)</Label>
+              <Label htmlFor="ip-description">{t("IP_WHITELIST_DESC_LABEL")}</Label>
               <Input
                 id="ip-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Home office"
+                placeholder={t("IP_WHITELIST_DESC_PLACEHOLDER")}
                 disabled={adding}
               />
             </div>
             <Button onClick={handleAdd} disabled={adding}>
-              {adding ? "Adding..." : "Add"}
+              {adding ? t("IP_WHITELIST_ADDING") : t("IP_WHITELIST_ADD")}
             </Button>
           </div>
 
           <div className="divide-y rounded-md border">
             {loading ? (
-              <p className="p-4 text-sm text-muted-foreground">Loading...</p>
+              <p className="p-4 text-sm text-muted-foreground">{t("COMMON_LOADING")}</p>
             ) : entries.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">No entries yet - the whitelist is empty.</p>
+              <p className="p-4 text-sm text-muted-foreground">{t("IP_WHITELIST_EMPTY")}</p>
             ) : (
               entries.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between px-4 py-2.5">

@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import { Lock, AlertCircle } from "lucide-react";
 import { confirmPasswordReset } from "@/services/authApi";
 
 function ResetPasswordForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -31,15 +33,15 @@ function ResetPasswordForm() {
     setError("");
 
     if (!token) {
-      setError("This reset link is missing its token. Request a new one.");
+      setError(t("RESET_PASSWORD_ERROR_MISSING_TOKEN"));
       return;
     }
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(t("RESET_PASSWORD_ERROR_TOO_SHORT"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("RESET_PASSWORD_ERROR_MISMATCH"));
       return;
     }
 
@@ -48,7 +50,7 @@ function ResetPasswordForm() {
       await confirmPasswordReset(token, newPassword);
       router.push("/login?reset=success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reset password. The link may have expired.");
+      setError(err instanceof Error ? err.message : t("RESET_PASSWORD_ERROR_GENERIC"));
     } finally {
       setIsLoading(false);
     }
@@ -64,10 +66,10 @@ function ResetPasswordForm() {
         </div>
 
         <CardTitle className="text-2xl font-bold text-center text-gray-800">
-          Reset Password
+          {t("RESET_PASSWORD_TITLE")}
         </CardTitle>
         <CardDescription className="text-center text-gray-600">
-          Choose a new password for your account
+          {t("RESET_PASSWORD_SUBTITLE")}
         </CardDescription>
       </CardHeader>
 
@@ -76,13 +78,13 @@ function ResetPasswordForm() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              This reset link is missing its token.{" "}
+              {t("RESET_PASSWORD_MISSING_TOKEN")}{" "}
               <button
                 type="button"
                 onClick={() => router.push("/forgot-password")}
                 className="underline font-medium"
               >
-                Request a new one
+                {t("RESET_PASSWORD_REQUEST_NEW")}
               </button>
               .
             </AlertDescription>
@@ -98,7 +100,7 @@ function ResetPasswordForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password</Label>
+            <Label htmlFor="newPassword">{t("RESET_PASSWORD_NEW_LABEL")}</Label>
             <Input
               id="newPassword"
               type="password"
@@ -109,7 +111,7 @@ function ResetPasswordForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t("RESET_PASSWORD_CONFIRM_LABEL")}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -124,7 +126,7 @@ function ResetPasswordForm() {
             className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
             disabled={isLoading || !token}
           >
-            {isLoading ? "Resetting..." : "Reset Password"}
+            {isLoading ? t("RESET_PASSWORD_SUBMIT_LOADING") : t("RESET_PASSWORD_SUBMIT")}
           </Button>
         </form>
       </CardContent>

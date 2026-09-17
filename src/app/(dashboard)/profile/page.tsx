@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { User as UserIcon, AlertCircle, Camera, ShieldCheck } from "lucide-react";
 import {
   Card,
@@ -27,6 +28,7 @@ function Field({ label, value }: { label: string; value?: string }) {
 }
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { refreshCurrentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchCurrentUser()
       .then(setUser)
-      .catch((err) => setError(err.message || "Failed to load profile"))
+      .catch((err) => setError(err.message || t("PROFILE_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -59,7 +61,7 @@ export default function ProfilePage() {
   async function handleDisableTotp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!totpPassword) {
-      setTotpError("Enter your current password to confirm.");
+      setTotpError(t("PROFILE_TOTP_PASSWORD_REQUIRED"));
       return;
     }
     setTotpError("");
@@ -70,7 +72,7 @@ export default function ProfilePage() {
       setDisablingTotp(false);
       setTotpPassword("");
     } catch (err) {
-      setTotpError(err instanceof Error ? err.message : "Failed to disable two-factor authentication");
+      setTotpError(err instanceof Error ? err.message : t("PROFILE_TOTP_DISABLE_ERROR"));
     } finally {
       setTotpSubmitting(false);
     }
@@ -90,11 +92,11 @@ export default function ProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+      setError(t("PROFILE_IMAGE_ONLY"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be under 5MB.");
+      setError(t("PROFILE_IMAGE_TOO_LARGE"));
       return;
     }
 
@@ -106,7 +108,7 @@ export default function ProfilePage() {
       setUser(updated);
       await refreshCurrentUser();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload photo");
+      setError(err instanceof Error ? err.message : t("PROFILE_UPLOAD_ERROR"));
     } finally {
       setUploading(false);
       setPreviewUrl(null);
@@ -118,9 +120,9 @@ export default function ProfilePage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">My Profile</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("NAVBAR_MY_PROFILE")}</h1>
         <p className="text-sm text-muted-foreground">
-          Your account details.
+          {t("PROFILE_SUBTITLE")}
         </p>
       </div>
 
@@ -146,7 +148,7 @@ export default function ProfilePage() {
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               className="group relative h-12 w-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden disabled:opacity-60"
-              title="Change photo"
+              title={t("PROFILE_CHANGE_PHOTO")}
             >
               {avatarSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element -- backend-streamed/blob preview, not a static asset
@@ -159,21 +161,21 @@ export default function ProfilePage() {
               </span>
             </button>
             <div>
-              <CardTitle>{user?.username || (loading ? "Loading..." : "Unknown user")}</CardTitle>
+              <CardTitle>{user?.username || (loading ? t("COMMON_LOADING") : t("PROFILE_UNKNOWN_USER"))}</CardTitle>
               <CardDescription>{user?.email}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-sm text-muted-foreground">{t("COMMON_LOADING")}</p>
           ) : user ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Username" value={user.username} />
-              <Field label="Email" value={user.email} />
-              <Field label="First Name" value={user.firstname} />
-              <Field label="Last Name" value={user.lastname} />
-              <Field label="Phone Number" value={user.phoneNumber} />
+              <Field label={t("PROFILE_FIELD_USERNAME")} value={user.username} />
+              <Field label={t("PROFILE_FIELD_EMAIL")} value={user.email} />
+              <Field label={t("PROFILE_FIELD_FIRSTNAME")} value={user.firstname} />
+              <Field label={t("PROFILE_FIELD_LASTNAME")} value={user.lastname} />
+              <Field label={t("PROFILE_FIELD_PHONE")} value={user.phoneNumber} />
             </div>
           ) : null}
         </CardContent>
@@ -184,13 +186,13 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-muted-foreground" />
             <div>
-              <CardTitle className="text-base">Two-Factor Authentication</CardTitle>
+              <CardTitle className="text-base">{t("PROFILE_TOTP_TITLE")}</CardTitle>
               <CardDescription>
                 {totpLoading
-                  ? "Loading..."
+                  ? t("COMMON_LOADING")
                   : totpEnabled
-                  ? "Enabled - codes come from the admin-portal Android app."
-                  : "Disabled - optional, enable it from the Authenticator screen in the admin-portal Android app."}
+                  ? t("PROFILE_TOTP_ENABLED_DESC")
+                  : t("PROFILE_TOTP_DISABLED_DESC")}
               </CardDescription>
             </div>
           </div>
@@ -205,7 +207,7 @@ export default function ProfilePage() {
             {disablingTotp ? (
               <form onSubmit={handleDisableTotp} className="flex items-end gap-3">
                 <div className="space-y-1.5 flex-1">
-                  <Label htmlFor="totp-disable-password">Current password</Label>
+                  <Label htmlFor="totp-disable-password">{t("PROFILE_TOTP_CURRENT_PASSWORD")}</Label>
                   <Input
                     id="totp-disable-password"
                     type="password"
@@ -215,7 +217,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <Button type="submit" variant="destructive" disabled={totpSubmitting}>
-                  {totpSubmitting ? "Disabling..." : "Confirm"}
+                  {totpSubmitting ? t("PROFILE_TOTP_DISABLING") : t("PROFILE_TOTP_CONFIRM")}
                 </Button>
                 <Button
                   type="button"
@@ -227,12 +229,12 @@ export default function ProfilePage() {
                     setTotpError("");
                   }}
                 >
-                  Cancel
+                  {t("COMMON_CANCEL")}
                 </Button>
               </form>
             ) : (
               <Button variant="outline" onClick={() => setDisablingTotp(true)}>
-                Disable
+                {t("PROFILE_TOTP_DISABLE")}
               </Button>
             )}
           </CardContent>

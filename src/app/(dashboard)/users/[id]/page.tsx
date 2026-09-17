@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { fetchUserById, updateUser, setUserRoles, resetPasswordForUser, User } from "@/services/userApi";
 import { fetchAllRoles, Role } from "@/services/roleApi";
 import { useAuth } from "@/context/AuthContext";
@@ -51,6 +52,7 @@ function TogglePill({
 const emptyForm = { firstname: "", lastname: "", email: "", phoneNumber: "" };
 
 export default function UserDetailPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const idParam = params?.id as string;
@@ -88,7 +90,7 @@ export default function UserDetailPage() {
         setUser(userData);
         setAvailableRoles(roles);
       })
-      .catch((err) => setError(err.message || "Failed to load user"))
+      .catch((err) => setError(err.message || t("USER_DETAIL_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [idParam, canManageRoles]);
 
@@ -138,9 +140,9 @@ export default function UserDetailPage() {
       }
       setUser(updated);
       setIsEditing(false);
-      toast({ description: "User updated." });
+      toast({ description: t("USER_DETAIL_UPDATED_TOAST") });
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to save changes");
+      setSaveError(err instanceof Error ? err.message : t("USER_DETAIL_SAVE_ERROR"));
     } finally {
       setSaving(false);
     }
@@ -151,11 +153,11 @@ export default function UserDetailPage() {
     setSendingReset(true);
     try {
       await resetPasswordForUser(idParam);
-      toast({ description: `Password reset email sent to ${user.email}.` });
+      toast({ description: t("USER_DETAIL_RESET_EMAIL_SENT", { email: user.email }) });
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Failed to send reset email",
+        title: t("USER_DETAIL_RESET_FAILED_TITLE"),
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -163,7 +165,7 @@ export default function UserDetailPage() {
     }
   }
 
-  if (loading) return <div className="p-6 max-w-2xl mx-auto">Loading...</div>;
+  if (loading) return <div className="p-6 max-w-2xl mx-auto">{t("COMMON_LOADING")}</div>;
 
   if (error) {
     return (
@@ -174,7 +176,7 @@ export default function UserDetailPage() {
         </Alert>
         <Button variant="outline" onClick={() => router.push("/users")}>
           <ArrowLeft className="h-4 w-4" />
-          Back to list
+          {t("USER_DETAIL_BACK")}
         </Button>
       </div>
     );
@@ -192,7 +194,7 @@ export default function UserDetailPage() {
     <div className="p-6 max-w-2xl mx-auto space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">User Detail</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("USER_DETAIL_TITLE")}</h1>
           <p className="text-sm text-muted-foreground">{user?.username}</p>
         </div>
         {!isEditing && (
@@ -200,13 +202,13 @@ export default function UserDetailPage() {
             {canEditFields && (
               <Button variant="outline" onClick={handleSendReset} disabled={sendingReset}>
                 <KeyRound className="h-4 w-4" />
-                {sendingReset ? "Sending..." : "Reset Password"}
+                {sendingReset ? t("USER_DETAIL_SENDING") : t("USER_DETAIL_RESET_PASSWORD")}
               </Button>
             )}
             {canEdit && (
               <Button onClick={startEdit}>
                 <Pencil className="h-4 w-4" />
-                Edit
+                {t("COMMON_EDIT")}
               </Button>
             )}
           </div>
@@ -215,7 +217,7 @@ export default function UserDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Account details</CardTitle>
+          <CardTitle className="text-base">{t("USER_DETAIL_ACCOUNT_DETAILS")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {saveError && (
@@ -226,7 +228,7 @@ export default function UserDetailPage() {
           )}
 
           <div className="space-y-1.5">
-            <Label>Username</Label>
+            <Label>{t("USER_DETAIL_USERNAME")}</Label>
             <div className="text-sm py-1.5">{user?.username}</div>
           </div>
 
@@ -234,7 +236,7 @@ export default function UserDetailPage() {
             <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="u-firstname">First Name</Label>
+                  <Label htmlFor="u-firstname">{t("USER_DETAIL_FIRSTNAME")}</Label>
                   <Input
                     id="u-firstname"
                     value={form.firstname}
@@ -242,7 +244,7 @@ export default function UserDetailPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="u-lastname">Last Name</Label>
+                  <Label htmlFor="u-lastname">{t("USER_DETAIL_LASTNAME")}</Label>
                   <Input
                     id="u-lastname"
                     value={form.lastname}
@@ -251,7 +253,7 @@ export default function UserDetailPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="u-email">Email</Label>
+                <Label htmlFor="u-email">{t("USER_DETAIL_EMAIL")}</Label>
                 <Input
                   id="u-email"
                   type="email"
@@ -260,7 +262,7 @@ export default function UserDetailPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="u-phone">Phone</Label>
+                <Label htmlFor="u-phone">{t("USER_DETAIL_PHONE")}</Label>
                 <Input
                   id="u-phone"
                   value={form.phoneNumber}
@@ -271,17 +273,17 @@ export default function UserDetailPage() {
           ) : (
             <>
               <div className="space-y-1.5">
-                <Label>Name</Label>
+                <Label>{t("USER_DETAIL_NAME")}</Label>
                 <div className="text-sm py-1.5">
                   {[user?.firstname, user?.lastname].filter(Boolean).join(" ") || "-"}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Email</Label>
+                <Label>{t("USER_DETAIL_EMAIL")}</Label>
                 <div className="text-sm py-1.5">{user?.email}</div>
               </div>
               <div className="space-y-1.5">
-                <Label>Phone</Label>
+                <Label>{t("USER_DETAIL_PHONE")}</Label>
                 <div className="text-sm py-1.5">{user?.phoneNumber || "-"}</div>
               </div>
             </>
@@ -291,13 +293,13 @@ export default function UserDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Roles</CardTitle>
+          <CardTitle className="text-base">{t("USER_DETAIL_ROLES_TITLE")}</CardTitle>
         </CardHeader>
         <CardContent>
           {canManageRoles ? (
             <div className="flex flex-wrap gap-2">
               {availableRoles.length === 0 && (
-                <p className="text-sm text-muted-foreground">No roles exist yet.</p>
+                <p className="text-sm text-muted-foreground">{t("USER_DETAIL_NO_ROLES_EXIST")}</p>
               )}
               {availableRoles.map((role) => (
                 <TogglePill
@@ -311,11 +313,11 @@ export default function UserDetailPage() {
           ) : (
             <>
               <p className="text-xs text-muted-foreground mb-2">
-                You don&apos;t have permission to manage roles - showing this user&apos;s assigned roles only.
+                {t("USER_DETAIL_NO_MANAGE_ROLES")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {(user?.roles || []).length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No roles assigned.</p>
+                  <p className="text-sm text-muted-foreground">{t("USER_DETAIL_NO_ROLES_ASSIGNED")}</p>
                 ) : (
                   (user?.roles || []).map((role) => (
                     <TogglePill key={role.id} label={role.name} selected />
@@ -329,13 +331,13 @@ export default function UserDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Effective permissions</CardTitle>
+          <CardTitle className="text-base">{t("USER_DETAIL_PERMISSIONS_TITLE")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {effectivePermissions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                None - this user has no roles assigned and cannot access any protected feature.
+                {t("USER_DETAIL_NO_PERMISSIONS")}
               </p>
             ) : (
               effectivePermissions.map((p) => (
@@ -355,17 +357,17 @@ export default function UserDetailPage() {
         {isEditing ? (
           <>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("USER_DETAIL_SAVING") : t("COMMON_SAVE")}
             </Button>
             <Button variant="outline" onClick={cancelEdit} disabled={saving}>
               <X className="h-4 w-4" />
-              Cancel
+              {t("COMMON_CANCEL")}
             </Button>
           </>
         ) : (
           <Button variant="outline" onClick={() => router.push("/users")}>
             <ArrowLeft className="h-4 w-4" />
-            Back to list
+            {t("USER_DETAIL_BACK")}
           </Button>
         )}
       </div>

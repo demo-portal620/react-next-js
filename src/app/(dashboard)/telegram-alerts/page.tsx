@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { fetchTelegramInviteLink } from "@/services/telegramApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { AlertTriangle, Copy, ExternalLink, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TelegramAlertsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [link, setLink] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,7 @@ export default function TelegramAlertsPage() {
       const inviteLink = await fetchTelegramInviteLink();
       setLink(inviteLink);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate invite link");
+      setError(err instanceof Error ? err.message : t("TELEGRAM_GENERATE_ERROR"));
     } finally {
       setLoading(false);
     }
@@ -37,28 +39,25 @@ export default function TelegramAlertsPage() {
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(link);
-      toast({ description: "Invite link copied." });
+      toast({ description: t("TELEGRAM_COPIED_TOAST") });
     } catch {
-      toast({ variant: "destructive", description: "Couldn't copy - copy it manually instead." });
+      toast({ variant: "destructive", description: t("TELEGRAM_COPY_FAILED_TOAST") });
     }
   }
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Telegram Alerts</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("TELEGRAM_TITLE")}</h1>
         <p className="text-sm text-muted-foreground">
-          Backend system errors (500s and unhandled exceptions) are pushed to a Telegram group in
-          real time, so DevOps hears about it without watching logs.
+          {t("TELEGRAM_SUBTITLE")}
         </p>
       </div>
 
       <Alert>
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          Generating a link doesn&apos;t notify anyone or add them automatically - Telegram
-          requires each person to open the link and join themselves. Share it directly with
-          whoever should receive alerts.
+          {t("TELEGRAM_WARNING")}
         </AlertDescription>
       </Alert>
 
@@ -73,23 +72,23 @@ export default function TelegramAlertsPage() {
           <div className="flex items-center gap-2">
             <Send className="h-5 w-5 text-muted-foreground" />
             <div>
-              <CardTitle className="text-base">Alert group invite</CardTitle>
-              <CardDescription>Get an invite link to the DevOps alert group.</CardDescription>
+              <CardTitle className="text-base">{t("TELEGRAM_INVITE_TITLE")}</CardTitle>
+              <CardDescription>{t("TELEGRAM_INVITE_DESC")}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={handleGenerate} disabled={loading}>
-            {loading ? "Generating..." : "Get invite link"}
+            {loading ? t("TELEGRAM_GENERATING") : t("TELEGRAM_GET_LINK")}
           </Button>
 
           {link && (
             <div className="flex items-center gap-2">
               <Input value={link} readOnly className="font-mono text-sm" />
-              <Button variant="outline" size="icon" onClick={handleCopy} title="Copy">
+              <Button variant="outline" size="icon" onClick={handleCopy} title={t("TELEGRAM_COPY")}>
                 <Copy className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" asChild title="Open in Telegram">
+              <Button variant="outline" size="icon" asChild title={t("TELEGRAM_OPEN")}>
                 <a href={link} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4" />
                 </a>

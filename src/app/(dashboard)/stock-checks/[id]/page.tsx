@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   StockCheckTaskDetail,
   fetchStockCheckTaskDetail,
@@ -28,10 +29,17 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function StockCheckDetailPage() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { hasPermission } = useAuth();
   const { toast } = useToast();
+
+  const statusLabels: Record<string, string> = {
+    PENDING: t("STOCK_STATUS_PENDING"),
+    SUBMITTED: t("STOCK_STATUS_SUBMITTED"),
+    APPROVED: t("STOCK_STATUS_APPROVED"),
+  };
   const [detail, setDetail] = useState<StockCheckTaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,7 +50,7 @@ export default function StockCheckDetailPage() {
     setError("");
     fetchStockCheckTaskDetail(params.id)
       .then(setDetail)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load task"))
+      .catch((err) => setError(err instanceof Error ? err.message : t("STOCK_CHECK_DETAIL_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [params.id]);
 
@@ -51,18 +59,18 @@ export default function StockCheckDetailPage() {
   }, [load]);
 
   async function handleSignOff() {
-    if (!confirm("Sign off on this stock check? Inventory quantities will be updated to match the counted values.")) {
+    if (!confirm(t("STOCK_CHECK_DETAIL_CONFIRM_SIGNOFF"))) {
       return;
     }
     setSigningOff(true);
     try {
       await signOffStockCheckTask(params.id);
-      toast({ description: "Task signed off - inventory reconciled." });
+      toast({ description: t("STOCK_CHECK_DETAIL_SIGNOFF_SUCCESS") });
       load();
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Sign-off failed",
+        title: t("STOCK_CHECK_DETAIL_SIGNOFF_ERROR_TITLE"),
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -71,7 +79,7 @@ export default function StockCheckDetailPage() {
   }
 
   if (loading) {
-    return <div className="p-6 max-w-4xl mx-auto text-muted-foreground">Loading...</div>;
+    return <div className="p-6 max-w-4xl mx-auto text-muted-foreground">{t("COMMON_LOADING")}</div>;
   }
 
   if (error || !detail) {
@@ -79,7 +87,7 @@ export default function StockCheckDetailPage() {
       <div className="p-6 max-w-4xl mx-auto">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error || "Task not found."}</AlertDescription>
+          <AlertDescription>{error || t("STOCK_CHECK_DETAIL_NOT_FOUND")}</AlertDescription>
         </Alert>
       </div>
     );
@@ -92,13 +100,13 @@ export default function StockCheckDetailPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-4">
       <Button variant="ghost" size="sm" onClick={() => router.push("/stock-checks")}>
         <ArrowLeft className="h-4 w-4" />
-        Back to Stock Checks
+        {t("STOCK_CHECK_DETAIL_BACK")}
       </Button>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            {task.title || "(untitled task)"}
+            {task.title || t("STOCK_CHECK_DETAIL_UNTITLED")}
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <span
@@ -107,11 +115,11 @@ export default function StockCheckDetailPage() {
                 statusStyle[task.status] ?? statusStyle.PENDING
               )}
             >
-              {task.status}
+              {statusLabels[task.status] ?? task.status}
             </span>
             {task.offSite === true && (
               <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive px-2.5 py-0.5 text-xs font-medium">
-                Submitted off-site
+                {t("STOCK_CHECK_DETAIL_OFFSITE_BADGE")}
               </span>
             )}
           </div>
@@ -119,18 +127,18 @@ export default function StockCheckDetailPage() {
         {canSignOff && (
           <Button onClick={handleSignOff} disabled={signingOff}>
             <CheckCircle2 className="h-4 w-4" />
-            {signingOff ? "Signing off..." : "Sign Off"}
+            {signingOff ? t("STOCK_CHECK_DETAIL_SIGNING_OFF") : t("STOCK_CHECK_DETAIL_SIGN_OFF")}
           </Button>
         )}
       </div>
 
       <Card className="py-0 overflow-hidden">
         <CardHeader className="pt-4">
-          <CardTitle className="text-base">Checklist</CardTitle>
+          <CardTitle className="text-base">{t("STOCK_CHECK_DETAIL_CHECKLIST_TITLE")}</CardTitle>
           <CardDescription>
             {task.status === "PENDING"
-              ? "Waiting for the assigned worker to scan and submit counts."
-              : "Rows in red don't match the expected quantity."}
+              ? t("STOCK_CHECK_DETAIL_WAITING")
+              : t("STOCK_CHECK_DETAIL_MISMATCH_HINT")}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -138,10 +146,10 @@ export default function StockCheckDetailPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50 text-left text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">SKU</th>
-                  <th className="px-4 py-3 font-medium">Expected</th>
-                  <th className="px-4 py-3 font-medium">Counted</th>
+                  <th className="px-4 py-3 font-medium">{t("STOCK_CHECK_DETAIL_COL_PRODUCT")}</th>
+                  <th className="px-4 py-3 font-medium">{t("STOCK_CHECK_DETAIL_COL_SKU")}</th>
+                  <th className="px-4 py-3 font-medium">{t("STOCK_CHECK_DETAIL_COL_EXPECTED")}</th>
+                  <th className="px-4 py-3 font-medium">{t("STOCK_CHECK_DETAIL_COL_COUNTED")}</th>
                 </tr>
               </thead>
               <tbody>

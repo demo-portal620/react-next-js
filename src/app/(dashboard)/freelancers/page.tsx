@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Freelancer,
   fetchFreelancers,
@@ -41,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { downloadCsv } from "@/lib/csv";
 
 export default function FreelancerListPage() {
+  const { t } = useTranslation();
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,7 +61,7 @@ export default function FreelancerListPage() {
         setFreelancers(data.freelancers);
         setTotalCount(data.total);
       })
-      .catch((err) => setError(err.message || "Failed to load freelancers"))
+      .catch((err) => setError(err.message || t("FREELANCERS_LOAD_ERROR")))
       .finally(() => setLoading(false));
   }, [page, pageSize, search]);
 
@@ -74,12 +76,12 @@ export default function FreelancerListPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this freelancer?")) return;
+    if (!confirm(t("FREELANCERS_DELETE_CONFIRM"))) return;
     try {
       await deleteFreelancer(id);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete");
+      alert(err instanceof Error ? err.message : t("FREELANCERS_DELETE_ERROR"));
     }
   }
 
@@ -88,7 +90,7 @@ export default function FreelancerListPage() {
       await toggleArchiveFreelancer(id);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update archive status");
+      alert(err instanceof Error ? err.message : t("FREELANCERS_ARCHIVE_ERROR"));
     }
   }
 
@@ -110,9 +112,9 @@ export default function FreelancerListPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Freelancer Directory</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("FREELANCERS_TITLE")}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage the CDN freelancer directory - search, register, edit, archive and remove entries.
+            {t("FREELANCERS_SUBTITLE")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -120,36 +122,36 @@ export default function FreelancerListPage() {
             variant="outline"
             onClick={handleExport}
             disabled={freelancers.length === 0}
-            title="Exports the rows currently shown on this page, not every page"
+            title={t("FREELANCERS_EXPORT_TITLE")}
           >
             <Download className="h-4 w-4" />
-            Export this page (CSV)
+            {t("FREELANCERS_EXPORT")}
           </Button>
           <Button onClick={() => router.push("/freelancers/new")}>
             <Plus className="h-4 w-4" />
-            Add Freelancer
+            {t("FREELANCERS_ADD")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Search</CardTitle>
-          <CardDescription>Wildcard search by username or email</CardDescription>
+          <CardTitle className="text-base">{t("COMMON_SEARCH")}</CardTitle>
+          <CardDescription>{t("FREELANCERS_SEARCH_DESC")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by username or email..."
+                placeholder={t("FREELANCERS_SEARCH_PLACEHOLDER")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Button type="submit" variant="secondary">
-              Search
+              {t("COMMON_SEARCH")}
             </Button>
           </form>
         </CardContent>
@@ -167,10 +169,10 @@ export default function FreelancerListPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50 text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Username</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Phone</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">{t("FREELANCERS_COL_USERNAME")}</th>
+                <th className="px-4 py-3 font-medium">{t("FREELANCERS_COL_EMAIL")}</th>
+                <th className="px-4 py-3 font-medium">{t("FREELANCERS_COL_PHONE")}</th>
+                <th className="px-4 py-3 font-medium">{t("FREELANCERS_COL_STATUS")}</th>
                 <th className="px-4 py-3 font-medium w-12"></th>
               </tr>
             </thead>
@@ -178,13 +180,13 @@ export default function FreelancerListPage() {
               {loading ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    Loading...
+                    {t("COMMON_LOADING")}
                   </td>
                 </tr>
               ) : freelancers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    No freelancers found.
+                    {t("FREELANCERS_EMPTY")}
                   </td>
                 </tr>
               ) : (
@@ -202,7 +204,7 @@ export default function FreelancerListPage() {
                             : "bg-primary/10 text-primary"
                         )}
                       >
-                        {f.archived ? "Archived" : "Active"}
+                        {f.archived ? t("FREELANCERS_STATUS_ARCHIVED") : t("FREELANCERS_STATUS_ACTIVE")}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -215,18 +217,18 @@ export default function FreelancerListPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => router.push(`/freelancers/${f.id}`)}>
                             <Pencil className="h-4 w-4" />
-                            Edit
+                            {t("COMMON_EDIT")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleArchive(f.id)}>
                             {f.archived ? (
                               <>
                                 <ArchiveRestore className="h-4 w-4" />
-                                Unarchive
+                                {t("FREELANCERS_UNARCHIVE")}
                               </>
                             ) : (
                               <>
                                 <Archive className="h-4 w-4" />
-                                Archive
+                                {t("FREELANCERS_ARCHIVE")}
                               </>
                             )}
                           </DropdownMenuItem>
@@ -235,7 +237,7 @@ export default function FreelancerListPage() {
                             onClick={() => handleDelete(f.id)}
                           >
                             <Trash2 className="h-4 w-4" />
-                            Delete
+                            {t("COMMON_DELETE")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -250,7 +252,7 @@ export default function FreelancerListPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
-          {totalCount} freelancer{totalCount === 1 ? "" : "s"} total
+          {t("FREELANCERS_TOTAL", { count: totalCount })}
         </p>
         <div className="flex items-center justify-between gap-2 sm:justify-end">
           <Button
@@ -260,10 +262,10 @@ export default function FreelancerListPage() {
             disabled={page === 1}
           >
             <ChevronLeft className="h-4 w-4" />
-            Previous
+            {t("FREELANCERS_PREVIOUS")}
           </Button>
           <span className="text-sm text-muted-foreground px-2">
-            Page {page} of {totalPages}
+            {t("FREELANCERS_PAGE_OF", { page, totalPages })}
           </span>
           <Button
             variant="outline"
@@ -271,7 +273,7 @@ export default function FreelancerListPage() {
             onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
             disabled={page >= totalPages}
           >
-            Next
+            {t("FREELANCERS_NEXT")}
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

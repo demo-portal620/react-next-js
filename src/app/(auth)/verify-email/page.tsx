@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import { verifyEmail, resendVerification } from "@/services/authApi";
 type Status = "verifying" | "success" | "error";
 
 function VerifyEmailContent() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -32,7 +34,7 @@ function VerifyEmailContent() {
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setError("This verification link is missing its token.");
+      setError(t("VERIFY_EMAIL_MISSING_TOKEN"));
       return;
     }
 
@@ -40,7 +42,7 @@ function VerifyEmailContent() {
       .then(() => setStatus("success"))
       .catch((err) => {
         setStatus("error");
-        setError(err instanceof Error ? err.message : "This link may have expired.");
+        setError(err instanceof Error ? err.message : t("VERIFY_EMAIL_ERROR_EXPIRED"));
       });
     // Only ever run once per page load - re-running on every token identity
     // change isn't a real scenario here (the token comes from the URL and
@@ -74,16 +76,16 @@ function VerifyEmailContent() {
         </div>
 
         <CardTitle className="text-2xl font-bold text-center text-gray-800">
-          Verify Email
+          {t("VERIFY_EMAIL_TITLE")}
         </CardTitle>
         <CardDescription className="text-center text-gray-600">
-          Confirming your account
+          {t("VERIFY_EMAIL_SUBTITLE")}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {status === "verifying" && (
-          <p className="text-center text-sm text-gray-600">Verifying your email...</p>
+          <p className="text-center text-sm text-gray-600">{t("VERIFY_EMAIL_VERIFYING")}</p>
         )}
 
         {status === "success" && (
@@ -91,14 +93,14 @@ function VerifyEmailContent() {
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription>
-                Your email is verified. You can now log in.
+                {t("VERIFY_EMAIL_SUCCESS")}
               </AlertDescription>
             </Alert>
             <Button
               className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               onClick={() => router.push("/login")}
             >
-              Go to login
+              {t("VERIFY_EMAIL_GO_LOGIN")}
             </Button>
           </>
         )}
@@ -114,16 +116,16 @@ function VerifyEmailContent() {
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertDescription>
-                  If that email has an unverified account, a fresh verification link has been sent.
+                  {t("VERIFY_EMAIL_RESEND_SUCCESS")}
                 </AlertDescription>
               </Alert>
             ) : (
               <form onSubmit={handleResend} className="space-y-3">
                 <p className="text-sm text-gray-600">
-                  Enter your email to get a new verification link.
+                  {t("VERIFY_EMAIL_RESEND_PROMPT")}
                 </p>
                 <div className="space-y-2">
-                  <Label htmlFor="resend-email">Email</Label>
+                  <Label htmlFor="resend-email">{t("VERIFY_EMAIL_LABEL")}</Label>
                   <Input
                     id="resend-email"
                     type="email"
@@ -138,7 +140,7 @@ function VerifyEmailContent() {
                   className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                   disabled={resendLoading}
                 >
-                  {resendLoading ? "Sending..." : "Send new link"}
+                  {resendLoading ? t("VERIFY_EMAIL_RESEND_SUBMIT_LOADING") : t("VERIFY_EMAIL_RESEND_SUBMIT")}
                 </Button>
               </form>
             )}

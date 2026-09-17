@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   fetchRoleById,
   fetchAllPermissions,
@@ -49,6 +50,7 @@ function TogglePill({
 }
 
 export default function RoleFormPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const idParam = params?.id as string;
@@ -82,12 +84,13 @@ export default function RoleFormPage() {
           });
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load form data");
+        setError(err instanceof Error ? err.message : t("ROLE_FORM_LOAD_ERROR"));
       } finally {
         setLoading(false);
       }
     }
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idParam, isEditMode]);
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -116,7 +119,7 @@ export default function RoleFormPage() {
       }
       router.push("/roles");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save role");
+      setError(err instanceof Error ? err.message : t("ROLE_FORM_SAVE_ERROR"));
     } finally {
       setSaving(false);
     }
@@ -131,21 +134,21 @@ export default function RoleFormPage() {
         className="-ml-2"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to list
+        {t("ROLE_FORM_BACK")}
       </Button>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isEditMode ? "Edit Role" : "Create Role"}</CardTitle>
+          <CardTitle>{isEditMode ? t("ROLE_FORM_EDIT_TITLE") : t("ROLE_FORM_CREATE_TITLE")}</CardTitle>
           <CardDescription>
             {isEditMode
-              ? "Update this role's name, description and the permissions it grants."
-              : "Define a new role and the permissions it grants to whoever holds it."}
+              ? t("ROLE_FORM_EDIT_DESC")
+              : t("ROLE_FORM_CREATE_DESC")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-sm text-muted-foreground">{t("COMMON_LOADING")}</p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
@@ -156,33 +159,33 @@ export default function RoleFormPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("ROLE_FORM_NAME")}</Label>
                 <Input
                   id="name"
                   name="name"
                   value={form.name}
                   onChange={handleInputChange}
-                  placeholder="e.g. ADMIN"
+                  placeholder={t("ROLE_FORM_NAME_PLACEHOLDER")}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("ROLE_FORM_DESCRIPTION")}</Label>
                 <Input
                   id="description"
                   name="description"
                   value={form.description}
                   onChange={handleInputChange}
-                  placeholder="What this role is for"
+                  placeholder={t("ROLE_FORM_DESCRIPTION_PLACEHOLDER")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Permissions</Label>
+                <Label>{t("ROLE_FORM_PERMISSIONS")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {availablePermissions.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No permissions available.</p>
+                    <p className="text-sm text-muted-foreground">{t("ROLE_FORM_NO_PERMISSIONS")}</p>
                   )}
                   {availablePermissions.map((perm) => (
                     <TogglePill
@@ -197,14 +200,14 @@ export default function RoleFormPage() {
 
               <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={saving}>
-                  {saving ? "Saving..." : isEditMode ? "Update" : "Create"}
+                  {saving ? t("ROLE_FORM_SAVING") : isEditMode ? t("ROLE_FORM_UPDATE") : t("ROLE_FORM_CREATE")}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push("/roles")}
                 >
-                  Cancel
+                  {t("COMMON_CANCEL")}
                 </Button>
               </div>
             </form>
