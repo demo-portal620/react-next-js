@@ -7,17 +7,17 @@ import zhLabels from "@/locales/zh/labels";
 
 export const LANGUAGE_STORAGE_KEY = "language";
 
-// SSR renders this "use client" module on the server too for the initial
-// HTML, where localStorage doesn't exist - fall back to "en" there, the
-// client re-render right after picks up the real stored preference.
-function getInitialLanguage(): string {
-  if (typeof window === "undefined") return "en";
-  return localStorage.getItem(LANGUAGE_STORAGE_KEY) || "en";
-}
-
+// Always init to "en", matching what the server always renders (it has no
+// localStorage access, so its HTML is always English) - if this read the
+// stored language instead, the client's first render (the one React
+// hydration diffs against the server HTML) would already be "zh" whenever
+// that was the saved preference, and hydration would fail on every page
+// that renders translated text. The real preference is applied after
+// mount instead (see I18nProvider) - a plain post-hydration re-render, not
+// a mismatch.
 if (!i18next.isInitialized) {
   i18next.use(initReactI18next).init({
-    lng: getInitialLanguage(),
+    lng: "en",
     fallbackLng: "en",
     resources: {
       en: { labels: enLabels },
@@ -26,6 +26,11 @@ if (!i18next.isInitialized) {
     defaultNS: "labels",
     interpolation: { escapeValue: false },
   });
+}
+
+export function getStoredLanguage(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(LANGUAGE_STORAGE_KEY);
 }
 
 export default i18next;
