@@ -33,12 +33,17 @@ interface NotificationContextValue {
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
 const RECENT_LIMIT = 20;
+const BASE_RECONNECT_DELAY_MS = 1000;
+const MAX_RECONNECT_DELAY_MS = 30000;
 
 // App-wide, unlike usePresence.ts's per-page pattern - mounted once in AdminLayout so the connection survives navigation.
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
+  const retryCountRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manualCloseRef = useRef(false);
 
   const refetch = useCallback(() => {
     fetchNotifications(1, RECENT_LIMIT)
@@ -53,34 +58,65 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     refetch();
   }, [refetch]);
 
+  // Reconnects automatically on an unexpected close with exponential backoff + jitter (capped at 30s), same
+  // strategy as usePresence.ts - stops retrying once the stored token is missing/expired.
   useEffect(() => {
-    const token = authUtils.getToken();
-    if (!token) return;
+    manualCloseRef.current = false;
 
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
-    const wsBase = apiBase.replace(/^http/, "ws").replace(/\/$/, "");
-    const url = `${wsBase}/ws/notifications?token=${encodeURIComponent(token)}&platform=web`;
+    function scheduleReconnect() {
+      if (manualCloseRef.current || !authUtils.isAuthenticated()) return;
+      const delay = Math.min(BASE_RECONNECT_DELAY_MS * 2 ** retryCountRef.current, MAX_RECONNECT_DELAY_MS);
+      const jitter = delay * (0.5 + Math.random() * 0.5);
+      retryCountRef.current += 1;
+      reconnectTimerRef.current = setTimeout(connect, jitter);
+    }
 
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
+    function connect() {
+      const token = authUtils.getToken();
+      if (!token || !authUtils.isAuthenticated()) return;
 
-    ws.onmessage = (event) => {
-      try {
-        const message: IncomingMessage = JSON.parse(event.data);
-        if (message.type === "UNREAD_COUNT") {
-          setUnreadCount((message as UnreadCountMessage).count);
-        } else if (message.type === "NOTIFICATION") {
-          const notification = (message as NotificationPushMessage).notification;
-          setUnreadCount((prev) => prev + 1);
-          setRecentNotifications((prev) => [notification, ...prev].slice(0, RECENT_LIMIT));
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+      const wsBase = apiBase.replace(/^http/, "ws").replace(/\/$/, "");
+      const url = `${wsBase}/ws/notifications?token=${encodeURIComponent(token)}&platform=web`;
+
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        retryCountRef.current = 0;
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message: IncomingMessage = JSON.parse(event.data);
+          if (message.type === "UNREAD_COUNT") {
+            setUnreadCount((message as UnreadCountMessage).count);
+          } else if (message.type === "NOTIFICATION") {
+            const notification = (message as NotificationPushMessage).notification;
+            setUnreadCount((prev) => prev + 1);
+            setRecentNotifications((prev) => [notification, ...prev].slice(0, RECENT_LIMIT));
+          }
+        } catch {
+          // malformed message - ignore
         }
-      } catch {
-        // malformed message - ignore
-      }
-    };
+      };
+
+      ws.onclose = () => {
+        if (!manualCloseRef.current) {
+          scheduleReconnect();
+        }
+      };
+    }
+
+    connect();
 
     return () => {
-      ws.close();
+      manualCloseRef.current = true;
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      wsRef.current?.close();
       wsRef.current = null;
     };
   }, []);
