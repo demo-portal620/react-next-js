@@ -92,12 +92,12 @@ export default function Sidebar({ collapsed }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "main-sidebar fixed top-14 left-0 z-30 h-[calc(100vh-3.5rem)] bg-gray-900 text-white transition-all duration-300",
+        "main-sidebar fixed top-14 left-0 z-30 flex h-[calc(100vh-3.5rem)] flex-col bg-gray-900 text-white transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Brand Logo */}
-      <div className="brand-link flex items-center p-4 border-b border-gray-700">
+      <div className="brand-link flex flex-shrink-0 items-center p-4 border-b border-gray-700">
         <div className="brand-image w-8 h-8 bg-white rounded-full mr-3 flex-shrink-0" />
         {!collapsed && (
           <span className="brand-text font-light">
@@ -106,8 +106,8 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         )}
       </div>
 
-      {/* Sidebar */}
-      <div className="sidebar">
+      {/* Sidebar - scrolls independently so the brand header stays pinned once the menu grows taller than the viewport */}
+      <div className="sidebar flex-1 overflow-y-auto overflow-x-hidden">
         {/* Sidebar Menu */}
         <nav className="mt-4 px-2">
           <ul className="nav nav-pills nav-sidebar flex-column space-y-1">
