@@ -1,6 +1,7 @@
-import { apiGet, apiPost, apiPut, apiDelete } from "@/services/apiClient";
+import { apiGet, apiPost, apiPut, apiDelete, apiGetBlob } from "@/services/apiClient";
 
 const PROPERTIES_BASE = "/api/properties";
+const MAINTENANCE_REQUESTS_BASE = "/api/maintenance-requests";
 
 // Mirrors ap-be's com.admin.entity.property.Property field-for-field.
 export interface Property {
@@ -160,4 +161,27 @@ export async function deleteMaintenanceRequest(
   requestId: string
 ): Promise<void> {
   return apiDelete<void>(`${PROPERTIES_BASE}/${propertyId}/units/${unitId}/maintenance-requests/${requestId}`);
+}
+
+// Mirrors ap-be's com.admin.entity.property.MaintenanceRequestPhoto field-for-field.
+export interface MaintenanceRequestPhoto {
+  id: string;
+  requestId: string;
+  storageKey: string;
+  contentType: string;
+  uploadedBy?: string;
+  createdDate?: string;
+}
+
+// Metadata only - use maintenanceRequestPhotoBlobUrl for the actual image bytes.
+export async function fetchMaintenanceRequestPhotos(requestId: string): Promise<MaintenanceRequestPhoto[]> {
+  return apiGet<MaintenanceRequestPhoto[]>(`${MAINTENANCE_REQUESTS_BASE}/${requestId}/photos`);
+}
+
+// Auth-gated (unlike profile pictures), so this can't just be an <img src>
+// URL - fetches the bytes as a Blob and hands back an object URL the
+// caller must revoke (URL.revokeObjectURL) when done with it.
+export async function fetchMaintenanceRequestPhotoBlobUrl(requestId: string, photoId: string): Promise<string> {
+  const blob = await apiGetBlob(`${MAINTENANCE_REQUESTS_BASE}/${requestId}/photos/${photoId}`);
+  return URL.createObjectURL(blob);
 }

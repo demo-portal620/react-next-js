@@ -75,3 +75,13 @@ export async function apiDelete<T>(url: string): Promise<T> {
   const res = await apiClient.delete<BaseResponse<T>>(url);
   return res.data.data;
 }
+
+// For endpoints that stream raw bytes instead of a BaseResponse envelope
+// (e.g. maintenance/stock-check photos) - these are auth-gated, unlike the
+// profile-picture endpoint, so a plain <img src> can't reach them; the
+// caller wraps the Blob in URL.createObjectURL() to get something an <img>
+// can use, and must revoke it on unmount.
+export async function apiGetBlob(url: string): Promise<Blob> {
+  const res = await apiClient.get<Blob>(url, { responseType: "blob" });
+  return res.data;
+}

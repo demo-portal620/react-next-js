@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut } from "@/services/apiClient";
+import { apiGet, apiPost, apiPut, apiGetBlob } from "@/services/apiClient";
 
 const STOCK_CHECKS_BASE = "/api/stock-checks";
 const WORK_SITE_BASE = "/api/work-site";
@@ -89,4 +89,27 @@ export async function updateWorkSiteConfig(payload: {
   radiusMeters: number;
 }): Promise<WorkSiteConfig> {
   return apiPut<WorkSiteConfig>(WORK_SITE_BASE, payload);
+}
+
+// Mirrors ap-be's com.admin.entity.stockcheck.StockCheckTaskPhoto field-for-field.
+export interface StockCheckTaskPhoto {
+  id: string;
+  taskId: string;
+  storageKey: string;
+  contentType: string;
+  uploadedBy?: string;
+  createdDate?: string;
+}
+
+// Metadata only - use fetchStockCheckTaskPhotoBlobUrl for the actual image bytes.
+export async function fetchStockCheckTaskPhotos(taskId: string): Promise<StockCheckTaskPhoto[]> {
+  return apiGet<StockCheckTaskPhoto[]>(`${STOCK_CHECKS_BASE}/${taskId}/photos`);
+}
+
+// Auth-gated, so this can't just be an <img src> URL - fetches the bytes as
+// a Blob and hands back an object URL the caller must revoke
+// (URL.revokeObjectURL) when done with it.
+export async function fetchStockCheckTaskPhotoBlobUrl(taskId: string, photoId: string): Promise<string> {
+  const blob = await apiGetBlob(`${STOCK_CHECKS_BASE}/${taskId}/photos/${photoId}`);
+  return URL.createObjectURL(blob);
 }

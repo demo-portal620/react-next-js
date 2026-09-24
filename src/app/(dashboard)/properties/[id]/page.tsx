@@ -15,6 +15,8 @@ import {
   createMaintenanceRequest,
   updateMaintenanceRequest,
   deleteMaintenanceRequest,
+  fetchMaintenanceRequestPhotos,
+  fetchMaintenanceRequestPhotoBlobUrl,
   Property,
   Unit,
   MaintenanceRequest,
@@ -25,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
 import AppDialog from "@/components/custom-ui/app-dialog";
+import PhotoGallery from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,6 +99,7 @@ export default function PropertyDetailPage() {
   const [maintenanceFormError, setMaintenanceFormError] = useState("");
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const [assigneeCandidates, setAssigneeCandidates] = useState<User[]>([]);
+  const [maintenancePhotoIds, setMaintenancePhotoIds] = useState<string[]>([]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -261,6 +265,7 @@ export default function PropertyDetailPage() {
     setMaintenanceForm({ ...emptyMaintenanceForm, unitId: units[0]?.id || "" });
     setAssigneeSearch("");
     setMaintenanceFormError("");
+    setMaintenancePhotoIds([]);
     setShowMaintenanceDialog(true);
   }
 
@@ -277,6 +282,10 @@ export default function PropertyDetailPage() {
     });
     setAssigneeSearch("");
     setMaintenanceFormError("");
+    setMaintenancePhotoIds([]);
+    fetchMaintenanceRequestPhotos(request.id)
+      .then((photos) => setMaintenancePhotoIds(photos.map((p) => p.id)))
+      .catch(() => setMaintenancePhotoIds([]));
     setShowMaintenanceDialog(true);
   }
 
@@ -818,6 +827,15 @@ export default function PropertyDetailPage() {
               </SelectContent>
             </Select>
           </div>
+          {editingMaintenance && (
+            <div className="space-y-1.5">
+              <Label>{t("PROPERTY_MAINTENANCE_FIELD_PHOTOS")}</Label>
+              <PhotoGallery
+                photoIds={maintenancePhotoIds}
+                fetchBlobUrl={(photoId) => fetchMaintenanceRequestPhotoBlobUrl(editingMaintenance.id, photoId)}
+              />
+            </div>
+          )}
         </div>
       </AppDialog>
     </div>

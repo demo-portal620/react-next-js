@@ -7,6 +7,8 @@ import {
   StockCheckTaskDetail,
   fetchStockCheckTaskDetail,
   signOffStockCheckTask,
+  fetchStockCheckTaskPhotos,
+  fetchStockCheckTaskPhotoBlobUrl,
 } from "@/services/stockCheckApi";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +23,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import PhotoGallery from "@/components/PhotoGallery";
 
 const statusStyle: Record<string, string> = {
   PENDING: "bg-muted text-muted-foreground",
@@ -44,6 +47,7 @@ export default function StockCheckDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [signingOff, setSigningOff] = useState(false);
+  const [photoIds, setPhotoIds] = useState<string[]>([]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -57,6 +61,12 @@ export default function StockCheckDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    fetchStockCheckTaskPhotos(params.id)
+      .then((photos) => setPhotoIds(photos.map((p) => p.id)))
+      .catch(() => setPhotoIds([]));
+  }, [params.id]);
 
   async function handleSignOff() {
     if (!confirm(t("STOCK_CHECK_DETAIL_CONFIRM_SIGNOFF"))) {
@@ -172,6 +182,20 @@ export default function StockCheckDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {photoIds.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("STOCK_CHECK_DETAIL_PHOTOS_TITLE")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PhotoGallery
+              photoIds={photoIds}
+              fetchBlobUrl={(photoId) => fetchStockCheckTaskPhotoBlobUrl(params.id, photoId)}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
