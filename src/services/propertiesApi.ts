@@ -95,3 +95,69 @@ export async function updateUnit(
 export async function deleteUnit(propertyId: string, unitId: string): Promise<void> {
   return apiDelete<void>(`${PROPERTIES_BASE}/${propertyId}/units/${unitId}`);
 }
+
+// Mirrors ap-be's com.admin.entity.property.MaintenanceRequest field-for-field.
+export interface MaintenanceRequest {
+  id: string;
+  unitId: string;
+  title: string;
+  description?: string;
+  priority: "LOW" | "MEDIUM" | "HIGH";
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  assignedTo?: string;
+  reportedBy?: string;
+  resolutionNote?: string;
+  resolvedDate?: string;
+  submittedLatitude?: number;
+  submittedLongitude?: number;
+  createdBy?: string;
+  createdDate?: string;
+  updatedBy?: string;
+  updatedDate?: string;
+  deleteFlag: boolean;
+}
+
+export interface MaintenanceRequestPayload {
+  title: string;
+  description?: string;
+  priority: "LOW" | "MEDIUM" | "HIGH";
+  status?: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  assignedTo?: string;
+  reportedBy?: string;
+}
+
+// Aggregates across every unit of the property - the manager's property-level ticket view.
+export async function fetchMaintenanceRequestsForProperty(propertyId: string): Promise<MaintenanceRequest[]> {
+  return apiGet<MaintenanceRequest[]>(`${PROPERTIES_BASE}/${propertyId}/maintenance-requests`);
+}
+
+export async function createMaintenanceRequest(
+  propertyId: string,
+  unitId: string,
+  payload: MaintenanceRequestPayload
+): Promise<MaintenanceRequest> {
+  return apiPost<MaintenanceRequest>(
+    `${PROPERTIES_BASE}/${propertyId}/units/${unitId}/maintenance-requests`,
+    payload
+  );
+}
+
+export async function updateMaintenanceRequest(
+  propertyId: string,
+  unitId: string,
+  requestId: string,
+  payload: MaintenanceRequestPayload
+): Promise<void> {
+  return apiPut<void>(
+    `${PROPERTIES_BASE}/${propertyId}/units/${unitId}/maintenance-requests/${requestId}`,
+    payload
+  );
+}
+
+export async function deleteMaintenanceRequest(
+  propertyId: string,
+  unitId: string,
+  requestId: string
+): Promise<void> {
+  return apiDelete<void>(`${PROPERTIES_BASE}/${propertyId}/units/${unitId}/maintenance-requests/${requestId}`);
+}

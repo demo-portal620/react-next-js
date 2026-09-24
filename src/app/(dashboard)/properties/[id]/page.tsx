@@ -11,10 +11,17 @@ import {
   createUnit,
   updateUnit,
   deleteUnit,
+  fetchMaintenanceRequestsForProperty,
+  createMaintenanceRequest,
+  updateMaintenanceRequest,
+  deleteMaintenanceRequest,
   Property,
   Unit,
+  MaintenanceRequest,
 } from "@/services/propertiesApi";
+import { fetchUsers, fetchUserById, User } from "@/services/userApi";
 import { useAuth } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
 import AppDialog from "@/components/custom-ui/app-dialog";
@@ -45,6 +52,15 @@ const emptyUnitForm = {
   baseRent: "",
   status: "VACANT" as "VACANT" | "OCCUPIED" | "MAINTENANCE",
 };
+const emptyMaintenanceForm = {
+  unitId: "",
+  title: "",
+  description: "",
+  priority: "MEDIUM" as "LOW" | "MEDIUM" | "HIGH",
+  status: "OPEN" as "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED",
+  assignedTo: "",
+  reportedBy: "",
+};
 
 export default function PropertyDetailPage() {
   const { t } = useTranslation();
@@ -57,6 +73,8 @@ export default function PropertyDetailPage() {
 
   const [property, setProperty] = useState<Property | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
+  const [assigneeNames, setAssigneeNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -71,13 +89,26 @@ export default function PropertyDetailPage() {
   const [savingUnit, setSavingUnit] = useState(false);
   const [unitFormError, setUnitFormError] = useState("");
 
+  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
+  const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRequest | null>(null);
+  const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenanceForm);
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
+  const [maintenanceFormError, setMaintenanceFormError] = useState("");
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const [assigneeCandidates, setAssigneeCandidates] = useState<User[]>([]);
+
   const load = useCallback(() => {
     setLoading(true);
     setError("");
-    Promise.all([fetchPropertyById(propertyId), fetchUnits(propertyId)])
-      .then(([propertyData, unitsData]) => {
+    Promise.all([
+      fetchPropertyById(propertyId),
+      fetchUnits(propertyId),
+      fetchMaintenanceRequestsForProperty(propertyId),
+    ])
+      .then(([propertyData, unitsData, maintenanceData]) => {
         setProperty(propertyData);
         setUnits(unitsData);
+        setMaintenanceRequests(maintenanceData);
       })
       .catch((err) => setError(err instanceof Error ? err.message : t("PROPERTY_DETAIL_NOT_FOUND")))
       .finally(() => setLoading(false));
@@ -86,6 +117,40 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Resolves assignedTo user ids to usernames for display - the entity only
+  // carries the id, so unresolved ones are looked up once and cached here.
+  useEffect(() => {
+    const missingIds = Array.from(
+      new Set(
+        maintenanceRequests
+          .map((r) => r.assignedTo)
+          .filter((id): id is string => !!id && !(id in assigneeNames))
+      )
+    );
+    if (missingIds.length === 0) return;
+    Promise.all(missingIds.map((id) => fetchUserById(id).catch(() => null))).then((users) => {
+      setAssigneeNames((prev) => {
+        const next = { ...prev };
+        users.forEach((u, i) => {
+          if (u) next[missingIds[i]] = u.username;
+        });
+        return next;
+      });
+    });
+  }, [maintenanceRequests, assigneeNames]);
+
+  // Debounced, search-driven assignee lookup - same pattern as the
+  // stock-checks page's worker picker, but open to any user (no role filter).
+  useEffect(() => {
+    if (!showMaintenanceDialog) return;
+    const handle = setTimeout(() => {
+      fetchUsers(1, 20, assigneeSearch)
+        .then((data) => setAssigneeCandidates(data.users))
+        .catch(() => setAssigneeCandidates([]));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [showMaintenanceDialog, assigneeSearch]);
 
   function startEditProperty() {
     if (!property) return;
@@ -191,6 +256,90 @@ export default function PropertyDetailPage() {
     }
   }
 
+  function startAddMaintenance() {
+    setEditingMaintenance(null);
+    setMaintenanceForm({ ...emptyMaintenanceForm, unitId: units[0]?.id || "" });
+    setAssigneeSearch("");
+    setMaintenanceFormError("");
+    setShowMaintenanceDialog(true);
+  }
+
+  function startEditMaintenance(request: MaintenanceRequest) {
+    setEditingMaintenance(request);
+    setMaintenanceForm({
+      unitId: request.unitId,
+      title: request.title,
+      description: request.description || "",
+      priority: request.priority,
+      status: request.status,
+      assignedTo: request.assignedTo || "",
+      reportedBy: request.reportedBy || "",
+    });
+    setAssigneeSearch("");
+    setMaintenanceFormError("");
+    setShowMaintenanceDialog(true);
+  }
+
+  async function handleSaveMaintenance() {
+    setMaintenanceFormError("");
+    if (!maintenanceForm.unitId || !maintenanceForm.title.trim()) {
+      setMaintenanceFormError(t("PROPERTY_MAINTENANCE_ERROR_REQUIRED"));
+      return;
+    }
+    setSavingMaintenance(true);
+    const payload = {
+      title: maintenanceForm.title.trim(),
+      description: maintenanceForm.description.trim() || undefined,
+      priority: maintenanceForm.priority,
+      status: maintenanceForm.status,
+      assignedTo: maintenanceForm.assignedTo || undefined,
+      reportedBy: maintenanceForm.reportedBy.trim() || undefined,
+    };
+    try {
+      if (editingMaintenance) {
+        await updateMaintenanceRequest(propertyId, editingMaintenance.unitId, editingMaintenance.id, payload);
+      } else {
+        await createMaintenanceRequest(propertyId, maintenanceForm.unitId, payload);
+      }
+      setShowMaintenanceDialog(false);
+      load();
+    } catch (err) {
+      setMaintenanceFormError(err instanceof Error ? err.message : t("PROPERTY_MAINTENANCE_ERROR_GENERIC"));
+    } finally {
+      setSavingMaintenance(false);
+    }
+  }
+
+  async function handleDeleteMaintenance(request: MaintenanceRequest) {
+    if (!confirm(t("PROPERTY_MAINTENANCE_DELETE_CONFIRM"))) return;
+    try {
+      await deleteMaintenanceRequest(propertyId, request.unitId, request.id);
+      load();
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        description: err instanceof Error ? err.message : t("PROPERTY_MAINTENANCE_DELETE_ERROR"),
+      });
+    }
+  }
+
+  function unitLabel(unitId: string): string {
+    const unit = units.find((u) => u.id === unitId);
+    return unit ? unit.unitNumber : unitId;
+  }
+
+  const priorityStyle: Record<string, string> = {
+    LOW: "bg-slate-100 text-slate-700",
+    MEDIUM: "bg-amber-100 text-amber-700",
+    HIGH: "bg-red-100 text-red-700",
+  };
+  const statusStyle: Record<string, string> = {
+    OPEN: "bg-blue-100 text-blue-700",
+    IN_PROGRESS: "bg-amber-100 text-amber-700",
+    RESOLVED: "bg-green-100 text-green-700",
+    CLOSED: "bg-slate-100 text-slate-700",
+  };
+
   const unitColumns: DataTableColumn<Unit>[] = [
     { key: "unitNumber", header: t("PROPERTY_UNITS_COL_NUMBER"), className: "px-4 py-3 font-medium" },
     {
@@ -214,6 +363,40 @@ export default function PropertyDetailPage() {
           {u.status}
         </span>
       ),
+    },
+  ];
+
+  const maintenanceColumns: DataTableColumn<MaintenanceRequest>[] = [
+    { key: "title", header: t("PROPERTY_MAINTENANCE_COL_TITLE"), className: "px-4 py-3 font-medium" },
+    {
+      key: "unitId",
+      header: t("PROPERTY_MAINTENANCE_COL_UNIT"),
+      className: "px-4 py-3 text-muted-foreground",
+      render: (r) => unitLabel(r.unitId),
+    },
+    {
+      key: "priority",
+      header: t("PROPERTY_MAINTENANCE_COL_PRIORITY"),
+      render: (r) => (
+        <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", priorityStyle[r.priority])}>
+          {r.priority}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: t("PROPERTY_MAINTENANCE_COL_STATUS"),
+      render: (r) => (
+        <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", statusStyle[r.status])}>
+          {r.status}
+        </span>
+      ),
+    },
+    {
+      key: "assignedTo",
+      header: t("PROPERTY_MAINTENANCE_COL_ASSIGNED"),
+      className: "px-4 py-3 text-muted-foreground",
+      render: (r) => (r.assignedTo ? assigneeNames[r.assignedTo] || r.assignedTo : t("PROPERTY_MAINTENANCE_UNASSIGNED")),
     },
   ];
 
@@ -308,6 +491,67 @@ export default function PropertyDetailPage() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleDeleteUnit(u)}
+                        title={t("COMMON_DELETE")}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )
+                : undefined
+            }
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">{t("PROPERTY_MAINTENANCE_TITLE")}</CardTitle>
+          {canManage && (
+            <Button
+              size="sm"
+              onClick={startAddMaintenance}
+              disabled={units.length === 0}
+              title={units.length === 0 ? t("PROPERTY_MAINTENANCE_NO_UNITS") : undefined}
+            >
+              <Plus className="h-4 w-4" />
+              {t("PROPERTY_MAINTENANCE_ADD")}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {units.length === 0 && (
+            <p className="mb-3 text-sm text-muted-foreground">{t("PROPERTY_MAINTENANCE_NO_UNITS")}</p>
+          )}
+          <DataTable
+            columns={maintenanceColumns}
+            rows={maintenanceRequests}
+            getRowKey={(r) => r.id}
+            loading={false}
+            emptyMessage={t("PROPERTY_MAINTENANCE_EMPTY")}
+            itemLabel="maintenance request"
+            exportFileName="maintenance-requests"
+            page={1}
+            pageSize={maintenanceRequests.length || 1}
+            total={maintenanceRequests.length}
+            onPageChange={() => {}}
+            actions={
+              canManage
+                ? (r) => (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => startEditMaintenance(r)}
+                        title={t("COMMON_EDIT")}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteMaintenance(r)}
                         title={t("COMMON_DELETE")}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -436,6 +680,141 @@ export default function PropertyDetailPage() {
                 <SelectItem value="VACANT">VACANT</SelectItem>
                 <SelectItem value="OCCUPIED">OCCUPIED</SelectItem>
                 <SelectItem value="MAINTENANCE">MAINTENANCE</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </AppDialog>
+
+      <AppDialog
+        title={
+          editingMaintenance
+            ? t("PROPERTY_MAINTENANCE_DIALOG_EDIT_TITLE")
+            : t("PROPERTY_MAINTENANCE_DIALOG_ADD_TITLE")
+        }
+        show={showMaintenanceDialog}
+        onClose={() => setShowMaintenanceDialog(false)}
+        onSave={handleSaveMaintenance}
+        saveLabel={savingMaintenance ? t("PROPERTY_MAINTENANCE_SAVING") : t("COMMON_SAVE")}
+      >
+        <div className="space-y-3">
+          {maintenanceFormError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{maintenanceFormError}</AlertDescription>
+            </Alert>
+          )}
+          <div className="space-y-1.5">
+            <Label>{t("PROPERTY_MAINTENANCE_FIELD_UNIT")}</Label>
+            <Select
+              value={maintenanceForm.unitId}
+              onValueChange={(value) => setMaintenanceForm((f) => ({ ...f, unitId: value }))}
+              disabled={!!editingMaintenance}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.unitNumber}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="maint-title">{t("PROPERTY_MAINTENANCE_FIELD_TITLE")}</Label>
+            <Input
+              id="maint-title"
+              value={maintenanceForm.title}
+              onChange={(e) => setMaintenanceForm((f) => ({ ...f, title: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="maint-description">{t("PROPERTY_MAINTENANCE_FIELD_DESCRIPTION")}</Label>
+            <Input
+              id="maint-description"
+              value={maintenanceForm.description}
+              onChange={(e) => setMaintenanceForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>{t("PROPERTY_MAINTENANCE_FIELD_PRIORITY")}</Label>
+              <Select
+                value={maintenanceForm.priority}
+                onValueChange={(value) =>
+                  setMaintenanceForm((f) => ({ ...f, priority: value as "LOW" | "MEDIUM" | "HIGH" }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LOW">LOW</SelectItem>
+                  <SelectItem value="MEDIUM">MEDIUM</SelectItem>
+                  <SelectItem value="HIGH">HIGH</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("PROPERTY_MAINTENANCE_FIELD_STATUS")}</Label>
+              <Select
+                value={maintenanceForm.status}
+                onValueChange={(value) =>
+                  setMaintenanceForm((f) => ({
+                    ...f,
+                    status: value as "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED",
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="OPEN">OPEN</SelectItem>
+                  <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
+                  <SelectItem value="RESOLVED">RESOLVED</SelectItem>
+                  <SelectItem value="CLOSED">CLOSED</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="maint-reported-by">{t("PROPERTY_MAINTENANCE_FIELD_REPORTED_BY")}</Label>
+            <Input
+              id="maint-reported-by"
+              value={maintenanceForm.reportedBy}
+              onChange={(e) => setMaintenanceForm((f) => ({ ...f, reportedBy: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("PROPERTY_MAINTENANCE_FIELD_ASSIGNED")}</Label>
+            <Input
+              value={assigneeSearch}
+              onChange={(e) => setAssigneeSearch(e.target.value)}
+              placeholder={t("PROPERTY_MAINTENANCE_ASSIGNEE_SEARCH_PLACEHOLDER")}
+            />
+            <Select
+              value={maintenanceForm.assignedTo}
+              onValueChange={(value) => setMaintenanceForm((f) => ({ ...f, assignedTo: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("PROPERTY_MAINTENANCE_ASSIGNEE_PLACEHOLDER")} />
+              </SelectTrigger>
+              <SelectContent>
+                {assigneeCandidates.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    {t("PROPERTY_MAINTENANCE_NO_MATCHING_USERS")}
+                  </div>
+                ) : (
+                  assigneeCandidates.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.username}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
