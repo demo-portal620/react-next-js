@@ -10,7 +10,7 @@ import {
   fetchWorkSiteConfig,
   updateWorkSiteConfig,
 } from "@/services/stockCheckApi";
-import { fetchUsers, User } from "@/services/userApi";
+import { fetchUsers, fetchUserById, User } from "@/services/userApi";
 import { Product, fetchProducts } from "@/services/stockApi";
 import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
 import AppDialog from "@/components/custom-ui/app-dialog";
@@ -53,6 +53,7 @@ export default function StockChecksPage() {
     APPROVED: t("STOCK_STATUS_APPROVED"),
   };
   const [tasks, setTasks] = useState<StockCheckTask[]>([]);
+  const [workerNames, setWorkerNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
@@ -145,6 +146,25 @@ export default function StockChecksPage() {
     load();
   }, [load]);
 
+  // Resolves assignedTo user ids to usernames for the Worker column - the
+  // task entity only carries the id, so unresolved ones are looked up once
+  // and cached here, same pattern as the property detail page's assignee names.
+  useEffect(() => {
+    const missingIds = Array.from(
+      new Set(tasks.map((t) => t.assignedTo).filter((id): id is string => !!id && !(id in workerNames)))
+    );
+    if (missingIds.length === 0) return;
+    Promise.all(missingIds.map((id) => fetchUserById(id).catch(() => null))).then((users) => {
+      setWorkerNames((prev) => {
+        const next = { ...prev };
+        users.forEach((u, i) => {
+          if (u) next[missingIds[i]] = u.username;
+        });
+        return next;
+      });
+    });
+  }, [tasks, workerNames]);
+
   function openCreateDialog() {
     setFormError("");
     setTitle("");
@@ -229,6 +249,12 @@ export default function StockChecksPage() {
       header: t("STOCK_CHECKS_COL_TITLE"),
       className: "px-4 py-3 font-medium",
       render: (task) => task.title || t("STOCK_CHECKS_UNTITLED"),
+    },
+    {
+      key: "assignedTo",
+      header: t("STOCK_CHECKS_COL_WORKER"),
+      className: "px-4 py-3 text-muted-foreground",
+      render: (task) => workerNames[task.assignedTo] || task.assignedTo,
     },
     {
       key: "status",

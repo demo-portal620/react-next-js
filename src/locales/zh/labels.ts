@@ -476,6 +476,7 @@ const labels: Record<LabelKey, string> = {
   STOCK_CHECKS_LOAD_ERROR: "加载任务失败",
   STOCK_CHECKS_EMPTY: "暂无盘点任务。",
   STOCK_CHECKS_COL_TITLE: "标题",
+  STOCK_CHECKS_COL_WORKER: "工作人员",
   STOCK_CHECKS_COL_STATUS: "状态",
   STOCK_CHECKS_COL_LOCATION: "位置",
   STOCK_CHECKS_COL_CREATED: "创建时间",

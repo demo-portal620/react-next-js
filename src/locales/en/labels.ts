@@ -477,6 +477,7 @@ const labels = {
   STOCK_CHECKS_LOAD_ERROR: "Failed to load tasks",
   STOCK_CHECKS_EMPTY: "No stock-check tasks yet.",
   STOCK_CHECKS_COL_TITLE: "Title",
+  STOCK_CHECKS_COL_WORKER: "Worker",
   STOCK_CHECKS_COL_STATUS: "Status",
   STOCK_CHECKS_COL_LOCATION: "Location",
   STOCK_CHECKS_COL_CREATED: "Created",
