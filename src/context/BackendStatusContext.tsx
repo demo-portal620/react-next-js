@@ -63,7 +63,7 @@ export function BackendStatusProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
     let recoveredTimer: ReturnType<typeof setTimeout> | null = null;
     let takingLongTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -74,11 +74,19 @@ export function BackendStatusProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    function clearPollTimer() {
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+    }
+
     function markUp() {
       if (cancelled) return;
       setStatus("up");
       setTakingLong(false);
       clearTakingLongTimer();
+      clearPollTimer();
       if (wasDownRef.current) {
         wasDownRef.current = false;
         setJustRecovered(true);
@@ -86,10 +94,23 @@ export function BackendStatusProvider({ children }: { children: ReactNode }) {
           if (!cancelled) setJustRecovered(false);
         }, RECOVERED_BANNER_MS);
       }
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = null;
+    }
+
+    // Self-scheduling rather than setInterval: a real Render cold start can
+    // leave a request hanging for tens of seconds (nothing like killing a
+    // local process, which fails instantly with ECONNREFUSED), so a fixed
+    // setInterval would stack up overlapping in-flight pings for the whole
+    // cold-start window. This waits for each ping to actually settle before
+    // scheduling the next one.
+    async function pollLoop() {
+      if (cancelled) return;
+      const ok = await pingHealth(POLL_TIMEOUT_MS);
+      if (cancelled) return;
+      if (ok) {
+        markUp();
+        return;
       }
+      pollTimer = setTimeout(pollLoop, POLL_INTERVAL_MS);
     }
 
     function markDown() {
@@ -102,10 +123,7 @@ export function BackendStatusProvider({ children }: { children: ReactNode }) {
         }, TAKING_LONG_MS);
       }
       if (!pollTimer) {
-        pollTimer = setInterval(async () => {
-          const ok = await pingHealth(POLL_TIMEOUT_MS);
-          if (ok) markUp();
-        }, POLL_INTERVAL_MS);
+        pollTimer = setTimeout(pollLoop, POLL_INTERVAL_MS);
       }
     }
 
@@ -117,7 +135,7 @@ export function BackendStatusProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
-      if (pollTimer) clearInterval(pollTimer);
+      clearPollTimer();
       if (recoveredTimer) clearTimeout(recoveredTimer);
       clearTakingLongTimer();
     };
