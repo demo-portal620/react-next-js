@@ -34,6 +34,11 @@ export const menuConfig: MenuItemConfig[] = [
     href: "/complaints",
   },
   {
+    title: "SIDEBAR_PROPERTIES",
+    href: "/properties",
+    requiredPermission: "MANAGE_PROPERTY",
+  },
+  {
     title: "SIDEBAR_INVENTORY",
     href: "/inventory",
     requiredPermission: "MANAGE_STOCK",
