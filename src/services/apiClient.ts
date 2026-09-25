@@ -85,3 +85,13 @@ export async function apiGetBlob(url: string): Promise<Blob> {
   const res = await apiClient.get<Blob>(url, { responseType: "blob" });
   return res.data;
 }
+
+// For multipart file uploads (e.g. property showcase photos). The instance
+// default Content-Type of application/json must be cleared per-request so
+// axios can set the correct multipart/form-data boundary itself.
+export async function apiPostMultipart<T>(url: string, formData: FormData): Promise<T> {
+  const res = await apiClient.post<BaseResponse<T>>(url, formData, {
+    headers: { "Content-Type": undefined },
+  });
+  return res.data.data;
+}

@@ -14,7 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, User, Lock, AlertCircle, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Eye, EyeOff, User, Lock, AlertCircle, ShieldCheck, Home } from "lucide-react";
 import { loginUser, verifyLoginTotp } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
 
@@ -114,7 +115,8 @@ export default function LoginPage() {
         }}
       />
 
-      <Card className="w-full max-w-md bg-white/95 backdrop-blur shadow-xl border-0 relative">
+      <div className="w-full max-w-md relative space-y-3">
+      <Card className="bg-white/95 backdrop-blur shadow-xl border-0">
         <CardHeader className="space-y-1 pb-4">
           {/* Logo placeholder */}
           <div className="flex justify-center mb-4">
@@ -313,6 +315,14 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      <Link
+        href="/homestay"
+        className="flex items-center justify-center gap-1.5 text-sm text-gray-600 hover:text-blue-700"
+      >
+        <Home className="h-3.5 w-3.5" />
+        {t("LOGIN_HOMESTAY_LINK")}
+      </Link>
+      </div>
     </div>
   );
 }

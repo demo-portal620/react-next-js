@@ -1,7 +1,8 @@
-import { apiGet, apiPost, apiPut, apiDelete, apiGetBlob } from "@/services/apiClient";
+import { apiGet, apiPost, apiPut, apiDelete, apiGetBlob, apiPostMultipart, API_BASE_URL } from "@/services/apiClient";
 
 const PROPERTIES_BASE = "/api/properties";
 const MAINTENANCE_REQUESTS_BASE = "/api/maintenance-requests";
+const PUBLIC_HOMESTAYS_BASE = "/api/public/homestays";
 
 // Mirrors ap-be's com.admin.entity.property.Property field-for-field.
 export interface Property {
@@ -9,6 +10,8 @@ export interface Property {
   name: string;
   address: string;
   type: "RESIDENTIAL" | "COMMERCIAL";
+  showcase: boolean;
+  showcaseDescription?: string;
   createdBy?: string;
   createdDate?: string;
   updatedBy?: string;
@@ -43,6 +46,8 @@ export interface PropertyPayload {
   name: string;
   address: string;
   type: "RESIDENTIAL" | "COMMERCIAL";
+  showcase: boolean;
+  showcaseDescription?: string;
 }
 
 export interface UnitPayload {
@@ -184,4 +189,63 @@ export async function fetchMaintenanceRequestPhotos(requestId: string): Promise<
 export async function fetchMaintenanceRequestPhotoBlobUrl(requestId: string, photoId: string): Promise<string> {
   const blob = await apiGetBlob(`${MAINTENANCE_REQUESTS_BASE}/${requestId}/photos/${photoId}`);
   return URL.createObjectURL(blob);
+}
+
+// Mirrors ap-be's com.admin.entity.property.PropertyPhoto field-for-field -
+// the manager-managed showcase gallery for a property.
+export interface PropertyPhoto {
+  id: string;
+  propertyId: string;
+  storageKey: string;
+  contentType: string;
+  uploadedBy?: string;
+  createdDate?: string;
+}
+
+export async function fetchPropertyPhotos(propertyId: string): Promise<PropertyPhoto[]> {
+  return apiGet<PropertyPhoto[]>(`${PROPERTIES_BASE}/${propertyId}/photos`);
+}
+
+export async function fetchPropertyPhotoBlobUrl(propertyId: string, photoId: string): Promise<string> {
+  const blob = await apiGetBlob(`${PROPERTIES_BASE}/${propertyId}/photos/${photoId}`);
+  return URL.createObjectURL(blob);
+}
+
+export async function uploadPropertyPhotos(propertyId: string, files: File[]): Promise<PropertyPhoto[]> {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+  return apiPostMultipart<PropertyPhoto[]>(`${PROPERTIES_BASE}/${propertyId}/photos`, formData);
+}
+
+// ---- Public homestay showcase (no auth) ----
+
+export interface HomestayUnit {
+  unitNumber: string;
+  bedrooms: number;
+  baseRent?: number;
+  status: "VACANT" | "OCCUPIED" | "MAINTENANCE";
+}
+
+export interface HomestaySummary {
+  id: string;
+  name: string;
+  address: string;
+  type: "RESIDENTIAL" | "COMMERCIAL";
+  description?: string;
+  photoIds: string[];
+  units: HomestayUnit[];
+}
+
+export async function fetchShowcasedHomestays(): Promise<HomestaySummary[]> {
+  return apiGet<HomestaySummary[]>(PUBLIC_HOMESTAYS_BASE);
+}
+
+export async function fetchShowcasedHomestay(id: string): Promise<HomestaySummary> {
+  return apiGet<HomestaySummary>(`${PUBLIC_HOMESTAYS_BASE}/${id}`);
+}
+
+// Public and unauthenticated, so this can be used directly as an <img src>
+// (unlike the manager-side fetchPropertyPhotoBlobUrl, which needs a Bearer token).
+export function publicHomestayPhotoUrl(id: string, photoId: string): string {
+  return `${API_BASE_URL}${PUBLIC_HOMESTAYS_BASE}/${id}/photos/${photoId}`;
 }

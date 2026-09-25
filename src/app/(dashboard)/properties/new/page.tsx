@@ -49,6 +49,9 @@ export default function NewPropertyPage() {
         name: form.name.trim(),
         address: form.address.trim(),
         type: form.type,
+        // Showcase publishing (description + photos) is set up afterward on
+        // the property detail page, since photo upload needs a property id.
+        showcase: false,
       });
       router.push(`/properties/${created.id}`);
     } catch (err) {

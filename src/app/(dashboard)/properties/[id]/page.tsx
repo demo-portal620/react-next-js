@@ -17,6 +17,9 @@ import {
   deleteMaintenanceRequest,
   fetchMaintenanceRequestPhotos,
   fetchMaintenanceRequestPhotoBlobUrl,
+  fetchPropertyPhotos,
+  fetchPropertyPhotoBlobUrl,
+  uploadPropertyPhotos,
   Property,
   Unit,
   MaintenanceRequest,
@@ -45,9 +48,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertCircle, ArrowLeft, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 
-const emptyPropertyForm = { name: "", address: "", type: "RESIDENTIAL" as "RESIDENTIAL" | "COMMERCIAL" };
+const emptyPropertyForm = {
+  name: "",
+  address: "",
+  type: "RESIDENTIAL" as "RESIDENTIAL" | "COMMERCIAL",
+  showcase: false,
+  showcaseDescription: "",
+};
 const emptyUnitForm = {
   unitNumber: "",
   floor: "",
@@ -85,6 +95,8 @@ export default function PropertyDetailPage() {
   const [propertyForm, setPropertyForm] = useState(emptyPropertyForm);
   const [savingProperty, setSavingProperty] = useState(false);
   const [propertyFormError, setPropertyFormError] = useState("");
+  const [propertyPhotoIds, setPropertyPhotoIds] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   const [showUnitDialog, setShowUnitDialog] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -158,9 +170,38 @@ export default function PropertyDetailPage() {
 
   function startEditProperty() {
     if (!property) return;
-    setPropertyForm({ name: property.name, address: property.address, type: property.type });
+    setPropertyForm({
+      name: property.name,
+      address: property.address,
+      type: property.type,
+      showcase: property.showcase,
+      showcaseDescription: property.showcaseDescription || "",
+    });
     setPropertyFormError("");
+    refreshPropertyPhotos();
     setShowEditProperty(true);
+  }
+
+  function refreshPropertyPhotos() {
+    fetchPropertyPhotos(propertyId)
+      .then((photos) => setPropertyPhotoIds(photos.map((p) => p.id)))
+      .catch(() => setPropertyPhotoIds([]));
+  }
+
+  async function handleUploadPropertyPhotos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadingPhotos(true);
+    try {
+      await uploadPropertyPhotos(propertyId, Array.from(files));
+      refreshPropertyPhotos();
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        description: err instanceof Error ? err.message : t("PROPERTY_SHOWCASE_PHOTO_UPLOAD_ERROR"),
+      });
+    } finally {
+      setUploadingPhotos(false);
+    }
   }
 
   async function handleSaveProperty() {
@@ -175,6 +216,8 @@ export default function PropertyDetailPage() {
         name: propertyForm.name.trim(),
         address: propertyForm.address.trim(),
         type: propertyForm.type,
+        showcase: propertyForm.showcase,
+        showcaseDescription: propertyForm.showcaseDescription.trim() || undefined,
       });
       setShowEditProperty(false);
       load();
@@ -440,22 +483,39 @@ export default function PropertyDetailPage() {
           <div>
             <CardTitle>{property.name}</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">{property.address}</p>
-            <span className="mt-2 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
-              {property.type}
-            </span>
-          </div>
-          {canManage && (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={startEditProperty}>
-                <Pencil className="h-4 w-4" />
-                {t("PROPERTY_DETAIL_EDIT")}
-              </Button>
-              <Button variant="destructive" size="sm" onClick={handleDeleteProperty}>
-                <Trash2 className="h-4 w-4" />
-                {t("PROPERTY_DETAIL_DELETE")}
-              </Button>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+                {property.type}
+              </span>
+              {property.showcase && (
+                <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium">
+                  {t("PROPERTY_SHOWCASE_BADGE")}
+                </span>
+              )}
             </div>
-          )}
+          </div>
+          <div className="flex gap-2">
+            {property.showcase && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={`/homestay/${property.id}`} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" />
+                  {t("PROPERTY_SHOWCASE_VIEW_PUBLIC")}
+                </a>
+              </Button>
+            )}
+            {canManage && (
+              <>
+                <Button variant="outline" size="sm" onClick={startEditProperty}>
+                  <Pencil className="h-4 w-4" />
+                  {t("PROPERTY_DETAIL_EDIT")}
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleDeleteProperty}>
+                  <Trash2 className="h-4 w-4" />
+                  {t("PROPERTY_DETAIL_DELETE")}
+                </Button>
+              </>
+            )}
+          </div>
         </CardHeader>
       </Card>
 
@@ -619,6 +679,46 @@ export default function PropertyDetailPage() {
                 <SelectItem value="COMMERCIAL">COMMERCIAL</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="rounded-md border p-3 space-y-3">
+            <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-input"
+                checked={propertyForm.showcase}
+                onChange={(e) => setPropertyForm((f) => ({ ...f, showcase: e.target.checked }))}
+              />
+              {t("PROPERTY_SHOWCASE_TOGGLE")}
+            </label>
+            <p className="text-xs text-muted-foreground">{t("PROPERTY_SHOWCASE_TOGGLE_HINT")}</p>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-prop-showcase-description">{t("PROPERTY_SHOWCASE_DESCRIPTION")}</Label>
+              <Textarea
+                id="edit-prop-showcase-description"
+                rows={3}
+                value={propertyForm.showcaseDescription}
+                onChange={(e) => setPropertyForm((f) => ({ ...f, showcaseDescription: e.target.value }))}
+                placeholder={t("PROPERTY_SHOWCASE_DESCRIPTION_PLACEHOLDER")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("PROPERTY_SHOWCASE_PHOTOS")}</Label>
+              <PhotoGallery
+                photoIds={propertyPhotoIds}
+                fetchBlobUrl={(photoId) => fetchPropertyPhotoBlobUrl(propertyId, photoId)}
+              />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={uploadingPhotos}
+                onChange={(e) => {
+                  handleUploadPropertyPhotos(e.target.files);
+                  e.target.value = "";
+                }}
+                className="text-sm"
+              />
+            </div>
           </div>
         </div>
       </AppDialog>
