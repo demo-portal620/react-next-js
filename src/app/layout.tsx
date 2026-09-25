@@ -5,6 +5,7 @@ import I18nProvider from "@/components/I18nProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { BackendStatusProvider } from "@/context/BackendStatusContext";
 import BackendStatusOverlay from "@/components/BackendStatusOverlay";
+import IdleAlertWatcher from "@/components/IdleAlertWatcher";
 
 export const metadata = {
   title: "My Admin Portal",
@@ -26,6 +27,7 @@ export default function RootLayout({
               {children}
               <Toaster />
               <BackendStatusOverlay />
+              <IdleAlertWatcher />
             </AuthProvider>
           </BackendStatusProvider>
         </I18nProvider>

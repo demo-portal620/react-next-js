@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { authUtils } from "@/utils/auth";
+import { notifyActivity } from "@/lib/idleAlert";
 
 // Shared axios instance - centralizes what every *Api.ts file used to
 // duplicate by hand: attaching the auth header, and redirecting to /login
@@ -36,6 +37,9 @@ function extractMessage(body: BaseResponse<unknown> | undefined, fallback: strin
 
 apiClient.interceptors.response.use(
   (response) => {
+    // A response - success or logical failure, doesn't matter - proves the
+    // backend answered, i.e. it's awake right now. See idleAlert.ts.
+    notifyActivity();
     const body = response.data as BaseResponse<unknown>;
     // Many endpoints here return a "logical" failure (BaseResponse.success
     // === false, e.g. 404/400) as a plain 200 response rather than a
