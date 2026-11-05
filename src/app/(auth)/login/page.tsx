@@ -18,11 +18,13 @@ import Link from "next/link";
 import { Eye, EyeOff, User, Lock, AlertCircle, ShieldCheck, Home } from "lucide-react";
 import { loginUser, verifyLoginTotp } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
+import { useModules } from "@/context/ModulesContext";
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { login } = useAuth();
+  const { loaded: modulesLoaded, isEnabled } = useModules();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -315,6 +317,7 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      {(!modulesLoaded || isEnabled("HOMESTAY")) && (
       <Link
         href="/homestay"
         className="flex items-center justify-center gap-1.5 text-sm text-gray-600 hover:text-blue-700"
@@ -322,6 +325,7 @@ export default function LoginPage() {
         <Home className="h-3.5 w-3.5" />
         {t("LOGIN_HOMESTAY_LINK")}
       </Link>
+      )}
       </div>
     </div>
   );

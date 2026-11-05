@@ -13,6 +13,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useModules } from "@/context/ModulesContext";
 import { usePresence } from "@/hooks/usePresence";
 import { fetchFreelancers } from "@/services/freelancerApi";
 import { fetchComplaintInbox } from "@/services/complaintApi";
@@ -35,12 +36,16 @@ interface StatTile {
 export default function Dashboard() {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
-  const { users: onlineUsers } = usePresence("Dashboard");
+  const { loaded: modulesLoaded, isEnabled } = useModules();
 
-  const canManageComplaints = hasPermission("MANAGE_COMPLAINTS");
-  const canManageStock = hasPermission("MANAGE_STOCK");
+  // A tile is shown (and its data fetched) only if its module is switched on as well as permitted. Waiting for modulesLoaded first avoids firing a request at a module that turns out to be off.
+  const showFreelancers = modulesLoaded && isEnabled("FREELANCERS");
+  const showApk = modulesLoaded && isEnabled("APK_VERSIONS");
+  const canManageComplaints = modulesLoaded && isEnabled("COMPLAINTS") && hasPermission("MANAGE_COMPLAINTS");
+  const canManageStock = modulesLoaded && isEnabled("INVENTORY") && hasPermission("MANAGE_STOCK");
   const canViewUsers = hasPermission("VIEW_USER");
-  const canViewPresence = hasPermission("VIEW_PRESENCE");
+  const canViewPresence = modulesLoaded && isEnabled("PRESENCE") && hasPermission("VIEW_PRESENCE");
+  const { users: onlineUsers } = usePresence("Dashboard", modulesLoaded && isEnabled("PRESENCE"));
 
   const [freelancerTotal, setFreelancerTotal] = useState<number | null>(null);
   const [openComplaints, setOpenComplaints] = useState<number | null>(null);
@@ -51,9 +56,13 @@ export default function Dashboard() {
   useEffect(() => {
     // Every list endpoint already returns a paginated total, so pageSize=1
     // is enough to read the count without pulling real rows.
-    fetchFreelancers(1, 1, "").then((res) => setFreelancerTotal(res.total));
-    fetchApkVersions(APK_APP_CODE, 1, 1).then((res) => setApkVersionTotal(res.total));
-  }, []);
+    if (showFreelancers) {
+      fetchFreelancers(1, 1, "").then((res) => setFreelancerTotal(res.total));
+    }
+    if (showApk) {
+      fetchApkVersions(APK_APP_CODE, 1, 1).then((res) => setApkVersionTotal(res.total));
+    }
+  }, [showFreelancers, showApk]);
 
   useEffect(() => {
     if (canManageComplaints) {
@@ -74,15 +83,19 @@ export default function Dashboard() {
   }, [canViewUsers]);
 
   const stats: StatTile[] = [
-    {
-      key: "freelancers",
-      title: t("DASHBOARD_STAT_FREELANCERS"),
-      value: freelancerTotal === null ? "—" : String(freelancerTotal),
-      icon: Users,
-      bgColor: "bg-blue-500",
-      iconBg: "bg-blue-600",
-      link: "/freelancers",
-    },
+    ...(showFreelancers
+      ? [
+          {
+            key: "freelancers",
+            title: t("DASHBOARD_STAT_FREELANCERS"),
+            value: freelancerTotal === null ? "—" : String(freelancerTotal),
+            icon: Users,
+            bgColor: "bg-blue-500",
+            iconBg: "bg-blue-600",
+            link: "/freelancers",
+          },
+        ]
+      : []),
     ...(canManageComplaints
       ? [
           {
@@ -135,15 +148,19 @@ export default function Dashboard() {
           },
         ]
       : []),
-    {
-      key: "apk",
-      title: t("DASHBOARD_STAT_APK"),
-      value: apkVersionTotal === null ? "—" : String(apkVersionTotal),
-      icon: Smartphone,
-      bgColor: "bg-yellow-500",
-      iconBg: "bg-yellow-600",
-      link: "/apk-versions",
-    },
+    ...(showApk
+      ? [
+          {
+            key: "apk",
+            title: t("DASHBOARD_STAT_APK"),
+            value: apkVersionTotal === null ? "—" : String(apkVersionTotal),
+            icon: Smartphone,
+            bgColor: "bg-yellow-500",
+            iconBg: "bg-yellow-600",
+            link: "/apk-versions",
+          },
+        ]
+      : []),
   ];
 
   return (

@@ -8,6 +8,7 @@ import {
   publicHomestayPhotoUrl,
   HomestaySummary,
 } from "@/services/propertiesApi";
+import { useModules } from "@/context/ModulesContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Home, MapPin } from "lucide-react";
 
@@ -28,16 +29,23 @@ function bedroomRangeLabel(units: HomestaySummary["units"]): string | null {
 
 export default function HomestayListPage() {
   const { t } = useTranslation();
+  const { loaded: modulesLoaded, isEnabled } = useModules();
+  const disabled = modulesLoaded && !isEnabled("HOMESTAY");
   const [homestays, setHomestays] = useState<HomestaySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!modulesLoaded) return;
+    if (disabled) {
+      setLoading(false);
+      return;
+    }
     fetchShowcasedHomestays()
       .then(setHomestays)
       .catch((err) => setError(err instanceof Error ? err.message : t("HOMESTAY_LIST_ERROR")))
       .finally(() => setLoading(false));
-  }, [t]);
+  }, [t, modulesLoaded, disabled]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -53,9 +61,10 @@ export default function HomestayListPage() {
         <p className="mt-2 text-gray-600">{t("HOMESTAY_LIST_SUBTITLE")}</p>
 
         {loading && <p className="mt-8 text-sm text-gray-500">{t("COMMON_LOADING")}</p>}
+        {disabled && <p className="mt-8 text-sm text-gray-500">{t("HOMESTAY_DISABLED")}</p>}
         {error && <p className="mt-8 text-sm text-red-600">{error}</p>}
 
-        {!loading && !error && homestays.length === 0 && (
+        {!loading && !error && !disabled && homestays.length === 0 && (
           <p className="mt-8 text-sm text-gray-500">{t("HOMESTAY_LIST_EMPTY")}</p>
         )}
 

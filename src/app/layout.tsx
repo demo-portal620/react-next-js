@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import I18nProvider from "@/components/I18nProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { BackendStatusProvider } from "@/context/BackendStatusContext";
+import { ModulesProvider } from "@/context/ModulesContext";
 import BackendStatusOverlay from "@/components/BackendStatusOverlay";
 import IdleAlertWatcher from "@/components/IdleAlertWatcher";
 
@@ -23,11 +24,13 @@ export default function RootLayout({
         <I18nProvider>
           <BackendStatusProvider>
             <AuthProvider>
-              <PageViewTracker />
-              {children}
-              <Toaster />
-              <BackendStatusOverlay />
-              <IdleAlertWatcher />
+              <ModulesProvider>
+                <PageViewTracker />
+                {children}
+                <Toaster />
+                <BackendStatusOverlay />
+                <IdleAlertWatcher />
+              </ModulesProvider>
             </AuthProvider>
           </BackendStatusProvider>
         </I18nProvider>

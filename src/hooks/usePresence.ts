@@ -22,7 +22,8 @@ const MAX_RECONNECT_DELAY_MS = 30000;
 // Connects to /ws/presence for the component's lifetime, reporting `activity` and returning everyone else connected.
 // Reconnects automatically on an unexpected close with exponential backoff + jitter (capped at 30s), and stops
 // retrying once the stored token is missing/expired rather than looping against a connection that can never succeed.
-export function usePresence(activity: string) {
+// enabled=false (the Who's Online module is switched off) skips connecting entirely - the backend would just 404 the handshake, and the backoff loop would keep retrying it forever.
+export function usePresence(activity: string, enabled = true) {
   const [users, setUsers] = useState<PresenceUser[]>([]);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
@@ -41,6 +42,7 @@ export function usePresence(activity: string) {
   }, [activity]);
 
   useEffect(() => {
+    if (!enabled) return;
     manualCloseRef.current = false;
 
     function scheduleReconnect() {
@@ -103,7 +105,7 @@ export function usePresence(activity: string) {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, []);
+  }, [enabled]);
 
   return { users, connected };
 }

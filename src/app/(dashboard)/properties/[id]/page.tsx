@@ -26,6 +26,7 @@ import {
 } from "@/services/propertiesApi";
 import { fetchUsers, fetchUserById, User } from "@/services/userApi";
 import { useAuth } from "@/context/AuthContext";
+import { useModules } from "@/context/ModulesContext";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import DataTable, { DataTableColumn } from "@/components/DataTable/DataTable";
@@ -81,6 +82,8 @@ export default function PropertyDetailPage() {
   const params = useParams();
   const propertyId = params?.id as string;
   const { hasPermission } = useAuth();
+  const { isEnabled } = useModules();
+  const homestayOn = isEnabled("HOMESTAY");
   const { toast } = useToast();
   const canManage = hasPermission("MANAGE_PROPERTY");
 
@@ -487,7 +490,7 @@ export default function PropertyDetailPage() {
               <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
                 {property.type}
               </span>
-              {property.showcase && (
+              {property.showcase && homestayOn && (
                 <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium">
                   {t("PROPERTY_SHOWCASE_BADGE")}
                 </span>
@@ -495,7 +498,7 @@ export default function PropertyDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            {property.showcase && (
+            {property.showcase && homestayOn && (
               <Button variant="outline" size="sm" asChild>
                 <a href={`/homestay/${property.id}`} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4" />
@@ -680,6 +683,7 @@ export default function PropertyDetailPage() {
               </SelectContent>
             </Select>
           </div>
+          {homestayOn && (
           <div className="rounded-md border p-3 space-y-3">
             <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
               <input
@@ -720,6 +724,7 @@ export default function PropertyDetailPage() {
               />
             </div>
           </div>
+          )}
         </div>
       </AppDialog>
 

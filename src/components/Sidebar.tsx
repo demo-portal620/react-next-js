@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning, ShieldAlert, Send, Building2 } from "lucide-react";
+import { ChevronDown, BarChart3, Users, Smartphone, Shield, Radio, Package, ClipboardCheck, MessageSquareWarning, ShieldAlert, Send, Building2, ToggleRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LabelKey } from "@/locales/en/labels";
 import { menuConfig } from "@/config/menuConfig";
@@ -15,6 +15,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
+import { useModules } from "@/context/ModulesContext";
+import type { ModuleKey } from "@/services/modulesApi";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -27,6 +29,7 @@ interface MenuItem {
   href?: string;
   children?: MenuItem[];
   requiredPermission?: string;
+  module?: ModuleKey;
 }
 
 // Icons layered onto menuConfig's data-only tree - href/requiredPermission live there so route guarding shares one source of truth.
@@ -41,6 +44,7 @@ const ICON_MAP: Partial<Record<LabelKey, React.ReactNode>> = {
   SIDEBAR_STOCK_CHECKS: <ClipboardCheck className="h-4 w-4" />,
   SIDEBAR_IP_WHITELIST: <ShieldAlert className="h-4 w-4" />,
   SIDEBAR_TELEGRAM_ALERTS: <Send className="h-4 w-4" />,
+  SIDEBAR_MODULES: <ToggleRight className="h-4 w-4" />,
   SIDEBAR_USER_MANAGEMENT: <Users className="h-4 w-4" />,
   SIDEBAR_USER_LIST: <Users className="h-4 w-4" />,
   SIDEBAR_ROLES: <Shield className="h-4 w-4" />,
@@ -60,6 +64,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
+  const { isEnabled } = useModules();
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleItem = (title: string) => {
@@ -83,7 +88,10 @@ export default function Sidebar({ collapsed }: SidebarProps) {
       if (visibleChildren.length > 0) {
         acc.push({ ...item, children: visibleChildren });
       }
-    } else if (!item.requiredPermission || hasPermission(item.requiredPermission)) {
+    } else if (
+      (!item.module || isEnabled(item.module)) &&
+      (!item.requiredPermission || hasPermission(item.requiredPermission))
+    ) {
       acc.push(item);
     }
     return acc;
