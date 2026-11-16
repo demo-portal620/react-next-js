@@ -19,6 +19,7 @@ import { Eye, EyeOff, User, Lock, AlertCircle, ShieldCheck, Home } from "lucide-
 import { loginUser, verifyLoginTotp } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
 import { useModules } from "@/context/ModulesContext";
+import { QuickStart } from "@/components/GuideSections";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -108,7 +109,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 py-10">
       {/* Background pattern */}
       <div
         className="absolute inset-0 opacity-40"
@@ -317,6 +318,10 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      {/* Always rendered, never fetched - readable even while the backend is still waking up. */}
+      <div className="rounded-xl bg-white/95 p-5 shadow-md">
+        <QuickStart />
+      </div>
       {(!modulesLoaded || isEnabled("HOMESTAY")) && (
       <Link
         href="/homestay"
